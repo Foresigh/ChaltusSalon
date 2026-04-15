@@ -310,14 +310,20 @@ app.get('/api/stats', auth, async (_req, res) => {
 app.get('*', (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 // ── Start ──────────────────────────────────────────────────────────────────────
-initDB()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`\n🚀 Chaltus Salon running → http://localhost:${PORT}`);
-      console.log(`🔧 Admin panel         → http://localhost:${PORT}/admin\n`);
-    });
-  })
-  .catch(err => {
-    console.error('❌  Database init failed:', err.message);
-    process.exit(1);
-  });
+async function start(retries = 5, delay = 3000) {
+  for (let i = 1; i <= retries; i++) {
+    try {
+      await initDB();
+      app.listen(PORT, () => {
+        console.log(`\n🚀 Chaltus Salon running → http://localhost:${PORT}`);
+        console.log(`🔧 Admin panel         → http://localhost:${PORT}/admin\n`);
+      });
+      return;
+    } catch (err) {
+      console.error(`❌  DB init attempt ${i}/${retries} failed: ${err.message}`);
+      if (i === retries) { process.exit(1); }
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+}
+start();
