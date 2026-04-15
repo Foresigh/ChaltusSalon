@@ -554,20 +554,21 @@ p  { font-size: 1rem; }
 .gallery-item.featured { aspect-ratio: 3/5; }
 @media (max-width: 639px) { .gallery-item.featured { aspect-ratio: 3/4; } }
 
-/* Instagram embed */
+/* Instagram section */
+.instagram-section { background: var(--gray-50); }
 .instagram-embed-wrap {
-  margin: 3rem auto 2rem;
-  max-width: 540px;
-  text-align: center;
+  margin: 0 auto;
+  max-width: 800px;
 }
-.instagram-embed-label {
-  font-size: 0.8rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--gray-500);
-  margin-bottom: 1rem;
+.instagram-embed-wrap .instagram-media {
+  transform-origin: top center;
+  width: 100% !important;
+  max-width: 800px !important;
 }
-.instagram-embed-label a { color: var(--black); text-decoration: underline; }
+.inline-link { color: var(--black); text-decoration: underline; }
+@media (max-width: 639px) {
+  .instagram-embed-wrap { max-width: 100%; }
+}
 
 /* ================================================================
    STYLISTS SECTION
