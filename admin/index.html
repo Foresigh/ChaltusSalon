@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chaltus Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════
+     LOGIN SCREEN
+══════════════════════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">CHALTUS</div>
+    <p class="login-sub">Admin Panel</p>
+    <form id="login-form">
+      <div class="field">
+        <label for="l-user">Username</label>
+        <input id="l-user" type="text" autocomplete="username" placeholder="admin" required />
+      </div>
+      <div class="field">
+        <label for="l-pass">Password</label>
+        <input id="l-pass" type="password" autocomplete="current-password" placeholder="••••••••" required />
+      </div>
+      <div id="login-error" class="alert alert--error" hidden></div>
+      <button type="submit" class="btn btn-primary w-full">Sign In</button>
+    </form>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     APP SHELL (shown after login)
+══════════════════════════════════════════════════════ -->
+<div id="app" hidden>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar__top">
+      <span class="sidebar__logo">CHALTUS</span>
+      <button class="sidebar__close" id="sidebar-close" aria-label="Close menu">✕</button>
+    </div>
+    <nav class="sidebar__nav">
+      <a href="#" class="nav-item active" data-tab="dashboard">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 6a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zm10 0a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
+        Dashboard
+      </a>
+      <a href="#" class="nav-item" data-tab="bookings">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>
+        Bookings
+        <span class="badge" id="pending-badge" hidden></span>
+      </a>
+      <a href="#" class="nav-item" data-tab="gallery">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"/></svg>
+        Gallery
+      </a>
+      <a href="#" class="nav-item" data-tab="stylists">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>
+        Stylists
+      </a>
+      <a href="#" class="nav-item" data-tab="services">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/></svg>
+        Services
+      </a>
+      <a href="#" class="nav-item" data-tab="settings">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>
+        Settings
+      </a>
+    </nav>
+    <div class="sidebar__bottom">
+      <a href="/" target="_blank" class="nav-item">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"/><path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"/></svg>
+        View Site
+      </a>
+      <button class="nav-item nav-item--logout" id="logout-btn">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd"/></svg>
+        Log Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <!-- Top bar -->
+    <header class="topbar">
+      <button class="topbar__menu" id="menu-toggle" aria-label="Toggle sidebar">
+        <span></span><span></span><span></span>
+      </button>
+      <h1 class="topbar__title" id="page-title">Dashboard</h1>
+      <span class="topbar__user" id="topbar-user"></span>
+    </header>
+
+    <!-- Tab panels -->
+    <div class="content">
+
+      <!-- ── DASHBOARD ── -->
+      <section data-panel="dashboard" class="panel active">
+        <div class="stats-grid" id="stats-grid">
+          <div class="stat-card"><div class="stat-card__val" id="stat-total">—</div><div class="stat-card__label">Total Bookings</div></div>
+          <div class="stat-card stat-card--accent"><div class="stat-card__val" id="stat-pending">—</div><div class="stat-card__label">Pending</div></div>
+          <div class="stat-card"><div class="stat-card__val" id="stat-confirmed">—</div><div class="stat-card__label">Confirmed</div></div>
+          <div class="stat-card"><div class="stat-card__val" id="stat-today">—</div><div class="stat-card__label">Today</div></div>
+        </div>
+        <div class="card">
+          <div class="card__head"><h2>Recent Bookings</h2></div>
+          <div class="table-wrap"><table id="recent-table"><thead><tr><th>Client</th><th>Service</th><th>Date</th><th>Time</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- ── BOOKINGS ── -->
+      <section data-panel="bookings" class="panel">
+        <div class="toolbar">
+          <div class="toolbar__left">
+            <select id="booking-filter-status" class="select-sm">
+              <option value="">All statuses</option>
+              <option value="pending">Pending</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <input type="date" id="booking-filter-date" class="input-sm" />
+            <button class="btn btn-sm btn-outline" id="booking-filter-clear">Clear</button>
+          </div>
+          <button class="btn btn-sm btn-primary" id="booking-refresh">↻ Refresh</button>
+        </div>
+        <div class="card">
+          <div class="table-wrap"><table id="bookings-table">
+            <thead><tr><th>#</th><th>Client</th><th>Phone</th><th>Service</th><th>Stylist</th><th>Date</th><th>Time</th><th>Status</th><th>Notes</th><th>Actions</th></tr></thead>
+            <tbody></tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <!-- ── GALLERY ── -->
+      <section data-panel="gallery" class="panel">
+        <div class="upload-zone" id="upload-zone">
+          <input type="file" id="gallery-file-input" accept="image/*" multiple hidden />
+          <div class="upload-zone__inner">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 21h18M21 3H3M9.75 3.75h4.5M12 3.75v.75"/></svg>
+            <p>Drag &amp; drop photos here</p>
+            <span>or</span>
+            <button type="button" class="btn btn-outline" id="gallery-pick-btn">Choose Files</button>
+          </div>
+          <div class="upload-fields">
+            <input type="text" id="gallery-alt"   placeholder="Alt text (accessibility)" class="input-sm" />
+            <input type="text" id="gallery-label" placeholder="Label shown on hover" class="input-sm" />
+            <button type="button" class="btn btn-primary" id="gallery-upload-btn" disabled>Upload</button>
+          </div>
+          <div id="gallery-upload-status" class="upload-status"></div>
+        </div>
+        <div class="gallery-admin-grid" id="gallery-admin-grid">
+          <div class="empty-state">No photos yet — upload your first one above.</div>
+        </div>
+      </section>
+
+      <!-- ── STYLISTS ── -->
+      <section data-panel="stylists" class="panel">
+        <!-- Add form -->
+        <div class="card card--form">
+          <div class="card__head collapsible-head" data-target="stylist-form-body">
+            <h2>Add / Edit Stylist</h2>
+            <span class="collapse-icon">▾</span>
+          </div>
+          <div class="card__body" id="stylist-form-body">
+            <form id="stylist-form" enctype="multipart/form-data">
+              <input type="hidden" id="stylist-id" />
+              <div class="form-grid">
+                <div class="field"><label>Name *</label><input type="text" id="sty-name" required placeholder="Full name" /></div>
+                <div class="field"><label>Role / Title *</label><input type="text" id="sty-role" required placeholder="e.g. Master Stylist · 5 Years" /></div>
+                <div class="field field--full"><label>Bio</label><textarea id="sty-desc" rows="3" placeholder="Short biography..."></textarea></div>
+                <div class="field">
+                  <label>Photo</label>
+                  <input type="file" id="sty-photo" accept="image/*" />
+                  <img id="sty-preview" class="photo-preview" src="" alt="" hidden />
+                </div>
+                <div class="field"><label>Display Order</label><input type="number" id="sty-order" value="99" min="1" /></div>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary" id="stylist-submit-btn">Add Stylist</button>
+                <button type="button" class="btn btn-outline" id="stylist-cancel-btn" hidden>Cancel Edit</button>
+              </div>
+            </form>
+          </div>
+        </div>
+        <!-- List -->
+        <div class="stylists-admin-list" id="stylists-admin-list"></div>
+      </section>
+
+      <!-- ── SERVICES ── -->
+      <section data-panel="services" class="panel">
+        <!-- Add form -->
+        <div class="card card--form">
+          <div class="card__head collapsible-head" data-target="service-form-body">
+            <h2>Add / Edit Service</h2>
+            <span class="collapse-icon">▾</span>
+          </div>
+          <div class="card__body" id="service-form-body">
+            <form id="service-form">
+              <input type="hidden" id="service-id" />
+              <div class="form-grid">
+                <div class="field">
+                  <label>Category *</label>
+                  <select id="svc-category">
+                    <option>Braids & Protective Styles</option>
+                    <option>Cornrows & Dutch Braids</option>
+                    <option>Loc Services</option>
+                    <option>Sew-in & Crochet</option>
+                    <option>Natural Hair & Twists</option>
+                    <option>Wash & Style</option>
+                    <option>Treatments & Beauty</option>
+                  </select>
+                </div>
+                <div class="field"><label>Service Name *</label><input type="text" id="svc-name" required placeholder="e.g. Knotless Braids" /></div>
+                <div class="field"><label>Duration *</label><input type="text" id="svc-duration" required placeholder="e.g. 4 hr 30 min" /></div>
+                <div class="field">
+                  <label>Price *</label>
+                  <div class="price-row">
+                    <input type="text" id="svc-price" required placeholder="e.g. 210" />
+                    <label class="checkbox-label"><input type="checkbox" id="svc-from" /> Starting price</label>
+                  </div>
+                </div>
+                <div class="field"><label>Order</label><input type="number" id="svc-order" value="99" min="1" /></div>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary" id="service-submit-btn">Add Service</button>
+                <button type="button" class="btn btn-outline" id="service-cancel-btn" hidden>Cancel Edit</button>
+              </div>
+            </form>
+          </div>
+        </div>
+        <!-- Service list grouped by category -->
+        <div id="services-admin-list"></div>
+      </section>
+
+      <!-- ── SETTINGS ── -->
+      <section data-panel="settings" class="panel">
+        <div class="card card--sm">
+          <div class="card__head"><h2>Change Password</h2></div>
+          <div class="card__body">
+            <form id="pw-form">
+              <div class="field"><label>Current Password</label><input type="password" id="pw-current" required /></div>
+              <div class="field"><label>New Password</label><input type="password" id="pw-new" required minlength="8" /></div>
+              <div class="field"><label>Confirm New Password</label><input type="password" id="pw-confirm" required /></div>
+              <div id="pw-msg" class="alert" hidden></div>
+              <button type="submit" class="btn btn-primary">Update Password</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /.content -->
+  </div><!-- /.main -->
+</div><!-- /#app -->
+
+<!-- Confirm modal -->
+<div class="modal-overlay" id="confirm-modal" hidden>
+  <div class="modal">
+    <p id="confirm-msg">Are you sure?</p>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="confirm-yes">Yes, delete</button>
+      <button class="btn btn-outline" id="confirm-no">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="admin.js"></script>
+</body>
+</html>

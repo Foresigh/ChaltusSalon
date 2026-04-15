@@ -1,0 +1,7 @@
+node_modules/
+salon.db
+salon.db-shm
+salon.db-wal
+uploads/
+.env
+*.log
