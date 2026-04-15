@@ -309,21 +309,15 @@ app.get('/api/stats', auth, async (_req, res) => {
 // ── SPA fallback ───────────────────────────────────────────────────────────────
 app.get('*', (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
-// ── Start ──────────────────────────────────────────────────────────────────────
-async function start(retries = 5, delay = 3000) {
-  for (let i = 1; i <= retries; i++) {
-    try {
-      await initDB();
-      app.listen(PORT, () => {
-        console.log(`\n🚀 Chaltus Salon running → http://localhost:${PORT}`);
-        console.log(`🔧 Admin panel         → http://localhost:${PORT}/admin\n`);
-      });
-      return;
-    } catch (err) {
-      console.error(`❌  DB init attempt ${i}/${retries} failed: ${err.message}`);
-      if (i === retries) { process.exit(1); }
-      await new Promise(r => setTimeout(r, delay));
-    }
-  }
-}
-start();
+// ── Start — listen first, then init DB ────────────────────────────────────────
+app.listen(PORT, () => {
+  console.log(`\n🚀 Chaltus Salon running → http://localhost:${PORT}`);
+  console.log(`🔧 Admin panel         → http://localhost:${PORT}/admin\n`);
+  console.log(`   DATABASE_URL set: ${!!process.env.DATABASE_URL}`);
+  console.log(`   NODE_ENV: ${process.env.NODE_ENV}`);
+
+  // Init DB after server is already accepting connections
+  initDB()
+    .then(() => console.log('✔  Database ready'))
+    .catch(err => console.error('❌  Database init failed:', err.message, err.stack));
+});
