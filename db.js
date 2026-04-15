@@ -26,6 +26,7 @@ async function initDB() {
     CREATE TABLE IF NOT EXISTS gallery (
       id         SERIAL PRIMARY KEY,
       filename   TEXT NOT NULL,
+      url        TEXT DEFAULT '',
       alt_text   TEXT DEFAULT '',
       label      TEXT DEFAULT '',
       created_at TIMESTAMPTZ DEFAULT NOW()
@@ -37,6 +38,7 @@ async function initDB() {
       role        TEXT NOT NULL,
       description TEXT DEFAULT '',
       photo       TEXT DEFAULT '',
+      photo_url   TEXT DEFAULT '',
       order_index INTEGER DEFAULT 0,
       active      INTEGER DEFAULT 1
     );

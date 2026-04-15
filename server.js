@@ -4,20 +4,27 @@
  */
 'use strict';
 
-const express   = require('express');
-const path      = require('path');
-const fs        = require('fs');
-const bcrypt    = require('bcryptjs');
-const jwt       = require('jsonwebtoken');
-const multer    = require('multer');
-const cors      = require('cors');
+const express    = require('express');
+const path       = require('path');
+const fs         = require('fs');
+const bcrypt     = require('bcryptjs');
+const jwt        = require('jsonwebtoken');
+const multer     = require('multer');
+const cors       = require('cors');
+const cloudinary = require('cloudinary').v2;
 const { pool, initDB } = require('./db');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'chaltus-salon-2024-change-in-prod';
+const JWT_SECRET    = process.env.JWT_SECRET || 'chaltus-salon-2024-change-in-prod';
+const USE_CLOUDINARY = !!process.env.CLOUDINARY_URL;
 
-// Ensure uploads directory exists
+// Cloudinary config (auto-reads CLOUDINARY_URL env var)
+if (USE_CLOUDINARY) {
+  console.log('☁️  Cloudinary storage enabled');
+}
+
+// Ensure local uploads directory exists (used when Cloudinary is not set)
 const UPLOADS = path.join(__dirname, 'uploads');
 if (!fs.existsSync(UPLOADS)) fs.mkdirSync(UPLOADS, { recursive: true });
 
@@ -32,23 +39,44 @@ app.use('/images',  express.static(path.join(__dirname, 'images')));
 app.use('/admin',   express.static(path.join(__dirname, 'admin')));
 app.use(express.static(__dirname));
 
-// ── Multer ─────────────────────────────────────────────────────────────────────
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, UPLOADS),
-  filename:    (_req, file,  cb) => {
-    const ext  = path.extname(file.originalname).toLowerCase();
-    const name = `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
-    cb(null, name);
-  }
-});
+// ── Multer — memory storage so we can pipe to Cloudinary or save to disk ──────
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 15 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const ok = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif'];
     cb(ok.includes(path.extname(file.originalname).toLowerCase()) ? null : new Error('Images only'), true);
   }
 });
+
+// Save file: Cloudinary in production, local disk in dev
+async function saveFile(buffer, originalname) {
+  if (USE_CLOUDINARY) {
+    const result = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { folder: 'chaltus-salon', resource_type: 'image' },
+        (err, res) => err ? reject(err) : resolve(res)
+      );
+      stream.end(buffer);
+    });
+    return { filename: result.public_id, url: result.secure_url };
+  } else {
+    const ext  = path.extname(originalname).toLowerCase();
+    const name = `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
+    fs.writeFileSync(path.join(UPLOADS, name), buffer);
+    return { filename: name, url: `/uploads/${name}` };
+  }
+}
+
+// Delete file: Cloudinary or local disk
+async function deleteFile(filename) {
+  if (USE_CLOUDINARY) {
+    await cloudinary.uploader.destroy(filename).catch(() => {});
+  } else {
+    const fp = path.join(UPLOADS, filename);
+    if (fs.existsSync(fp)) fs.unlinkSync(fp);
+  }
+}
 
 // ── Auth middleware ────────────────────────────────────────────────────────────
 function auth(req, res, next) {
@@ -92,7 +120,8 @@ app.post('/api/auth/change-password', auth, async (req, res) => {
 // ════════════════════════════════════════════════════════════════════════════════
 // GALLERY
 // ════════════════════════════════════════════════════════════════════════════════
-const toGalleryItem = (i) => ({ ...i, url: `/uploads/${i.filename}` });
+// url is stored directly in DB (Cloudinary URL or /uploads/filename)
+const toGalleryItem = (i) => ({ ...i, url: i.url || `/uploads/${i.filename}` });
 
 app.get('/api/gallery', async (_req, res) => {
   try {
@@ -105,12 +134,13 @@ app.post('/api/gallery', auth, upload.single('image'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No image uploaded' });
     const { alt_text = '', label = '' } = req.body;
+    const { filename, url } = await saveFile(req.file.buffer, req.file.originalname);
     const { rows } = await pool.query(
-      'INSERT INTO gallery (filename, alt_text, label) VALUES ($1, $2, $3) RETURNING *',
-      [req.file.filename, alt_text, label]
+      'INSERT INTO gallery (filename, url, alt_text, label) VALUES ($1, $2, $3, $4) RETURNING *',
+      [filename, url, alt_text, label]
     );
     res.json(toGalleryItem(rows[0]));
-  } catch (err) { res.status(500).json({ error: 'Server error' }); }
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }); }
 });
 
 app.put('/api/gallery/:id', auth, async (req, res) => {
@@ -125,8 +155,7 @@ app.delete('/api/gallery/:id', auth, async (req, res) => {
   try {
     const item = (await pool.query('SELECT filename FROM gallery WHERE id = $1', [req.params.id])).rows[0];
     if (!item) return res.status(404).json({ error: 'Not found' });
-    const fp = path.join(UPLOADS, item.filename);
-    if (fs.existsSync(fp)) fs.unlinkSync(fp);
+    await deleteFile(item.filename);
     await pool.query('DELETE FROM gallery WHERE id = $1', [req.params.id]);
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ error: 'Server error' }); }
@@ -135,7 +164,7 @@ app.delete('/api/gallery/:id', auth, async (req, res) => {
 // ════════════════════════════════════════════════════════════════════════════════
 // STYLISTS
 // ════════════════════════════════════════════════════════════════════════════════
-const toStylist = (s) => ({ ...s, photo_url: s.photo ? `/uploads/${s.photo}` : null });
+const toStylist = (s) => ({ ...s, photo_url: s.photo_url || (s.photo ? `/uploads/${s.photo}` : null) });
 
 app.get('/api/stylists', async (_req, res) => {
   try {
@@ -155,10 +184,14 @@ app.post('/api/stylists', auth, upload.single('photo'), async (req, res) => {
   try {
     const { name, role, description = '', order_index = 99 } = req.body;
     if (!name || !role) return res.status(400).json({ error: 'Name and role required' });
-    const photo = req.file?.filename ?? '';
+    let photo = '', photo_url = '';
+    if (req.file) {
+      const saved = await saveFile(req.file.buffer, req.file.originalname);
+      photo = saved.filename; photo_url = saved.url;
+    }
     const { rows } = await pool.query(
-      'INSERT INTO stylists (name, role, description, photo, order_index) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [name, role, description, photo, order_index]
+      'INSERT INTO stylists (name, role, description, photo, photo_url, order_index) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
+      [name, role, description, photo, photo_url, order_index]
     );
     res.json(toStylist(rows[0]));
   } catch (err) { res.status(500).json({ error: 'Server error' }); }
@@ -170,10 +203,14 @@ app.put('/api/stylists/:id', auth, upload.single('photo'), async (req, res) => {
     if (!ex) return res.status(404).json({ error: 'Not found' });
     const { name = ex.name, role = ex.role, description = ex.description,
             order_index = ex.order_index, active = ex.active } = req.body;
-    const photo = req.file?.filename ?? ex.photo;
+    let photo = ex.photo, photo_url = ex.photo_url || '';
+    if (req.file) {
+      const saved = await saveFile(req.file.buffer, req.file.originalname);
+      photo = saved.filename; photo_url = saved.url;
+    }
     await pool.query(
-      'UPDATE stylists SET name=$1,role=$2,description=$3,photo=$4,order_index=$5,active=$6 WHERE id=$7',
-      [name, role, description, photo, order_index, active, req.params.id]
+      'UPDATE stylists SET name=$1,role=$2,description=$3,photo=$4,photo_url=$5,order_index=$6,active=$7 WHERE id=$8',
+      [name, role, description, photo, photo_url, order_index, active, req.params.id]
     );
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ error: 'Server error' }); }
