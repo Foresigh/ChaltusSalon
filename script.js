@@ -633,6 +633,17 @@
   }());
 
   // Global: called by stylist card "Book with" buttons
+  // Hide mobile pill when booking section is visible (user is already in the form)
+  var mobilePill = document.getElementById('mobile-cta-bar');
+  var bookingEl  = document.getElementById('booking');
+  if (mobilePill && bookingEl) {
+    var pillObserver = new IntersectionObserver(function (entries) {
+      mobilePill.style.opacity   = entries[0].isIntersecting ? '0' : '1';
+      mobilePill.style.pointerEvents = entries[0].isIntersecting ? 'none' : '';
+    }, { threshold: 0.2 });
+    pillObserver.observe(bookingEl);
+  }
+
   window.bookWithStylist = function (name) {
     var bookingSection = document.getElementById('booking');
     if (bookingSection) bookingSection.scrollIntoView({ behavior: 'smooth' });

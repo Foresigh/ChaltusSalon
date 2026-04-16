@@ -1589,7 +1589,7 @@ img[loading="lazy"] { content-visibility: auto; }
   .mobile-cta-bar {
     display: flex;
     position: fixed;
-    bottom: calc(5rem + env(safe-area-inset-bottom));
+    bottom: calc(2rem + env(safe-area-inset-bottom));
     left: 50%;
     transform: translateX(-50%);
     z-index: 999;
@@ -1600,6 +1600,7 @@ img[loading="lazy"] { content-visibility: auto; }
     box-shadow: 0 8px 32px rgba(0,0,0,0.28);
     width: auto;
     white-space: nowrap;
+    transition: opacity 0.3s ease;
   }
   .mobile-cta-bar__btn {
     display: flex;
