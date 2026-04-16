@@ -229,7 +229,7 @@
               <span class="stylist-card__role">${s.role}</span>
               <h3 class="stylist-card__name">${s.name}</h3>
               ${s.description ? `<p class="stylist-card__desc">${s.description}</p>` : ''}
-              <a href="#booking" class="btn btn-outline-dark">Book with ${s.name.split(' ')[0]}</a>
+              <button type="button" class="btn btn-outline-dark" onclick="bookWithStylist('${s.name.replace(/'/g, "\\'")}')">Book with ${s.name.split(' ')[0]}</button>
             </div>
           </article>`;
         }).join('');
@@ -631,6 +631,19 @@
     loadServiceDropdown();
     loadStylistDropdown();
   }());
+
+  // Global: called by stylist card "Book with" buttons
+  window.bookWithStylist = function (name) {
+    var bookingSection = document.getElementById('booking');
+    if (bookingSection) bookingSection.scrollIntoView({ behavior: 'smooth' });
+    // Wait a tick for scroll, then click the matching dropdown item
+    setTimeout(function () {
+      var list = document.querySelector('#stylist-dd .stylist-dd__list');
+      if (!list) return;
+      var item = list.querySelector('[data-value="' + name.replace(/"/g, '&quot;') + '"]');
+      if (item) item.click();
+    }, 400);
+  };
 
 
   /* ====================================================

@@ -667,7 +667,7 @@ p  { font-size: 1rem; }
 @media (min-width: 640px)  { .stylists-grid { grid-template-columns: 1fr 1fr; } }
 @media (min-width: 1024px) { .stylists-grid { grid-template-columns: repeat(3, 1fr); } }
 
-.stylist-card { display: flex; flex-direction: column; gap: var(--s5); }
+.stylist-card { display: flex; flex-direction: column; gap: var(--s5); height: 100%; }
 
 .stylist-card__photo {
   aspect-ratio: 3/4;
@@ -685,7 +685,8 @@ p  { font-size: 1rem; }
 }
 .stylist-card:hover .stylist-card__photo img { filter: grayscale(0%); }
 
-.stylist-card__bio { display: flex; flex-direction: column; gap: var(--s3); }
+.stylist-card__bio { display: flex; flex-direction: column; gap: var(--s3); flex: 1; }
+.stylist-card__desc { flex: 1; }
 .stylist-card__name {
   font-family: var(--font-serif);
   font-size: 1.4rem;
