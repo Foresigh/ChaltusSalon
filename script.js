@@ -538,47 +538,76 @@
     }
 
     async function loadStylistDropdown() {
-      var picker = document.getElementById('stylist-picker');
-      var hidden = document.getElementById('b-stylist');
-      if (!picker) return;
+      var dd      = document.getElementById('stylist-dd');
+      var hidden  = document.getElementById('b-stylist');
+      if (!dd) return;
 
-      function selectCard(btn) {
-        picker.querySelectorAll('.stylist-card').forEach(function (c) { c.classList.remove('selected'); });
-        btn.classList.add('selected');
-        hidden.value = btn.dataset.value;
+      var trigger = dd.querySelector('.stylist-dd__trigger');
+      var list    = dd.querySelector('.stylist-dd__list');
+
+      /* ---- open / close ---- */
+      trigger.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var open = !list.hidden;
+        list.hidden = open;
+        trigger.setAttribute('aria-expanded', String(!open));
+        dd.classList.toggle('open', !open);
+      });
+      document.addEventListener('click', function () {
+        list.hidden = true;
+        trigger.setAttribute('aria-expanded', 'false');
+        dd.classList.remove('open');
+      });
+
+      /* ---- select an option ---- */
+      function pick(value, avatarHtml, label) {
+        hidden.value = value;
+        trigger.querySelector('.stylist-dd__avatar, img.stylist-dd__avatar-img').outerHTML; // replaced below
+        // rebuild trigger inner
+        trigger.innerHTML =
+          avatarHtml +
+          '<span class="stylist-dd__label">' + label + '</span>' +
+          '<span class="stylist-dd__arrow" aria-hidden="true">▾</span>';
+        list.hidden = true;
+        trigger.setAttribute('aria-expanded', 'false');
+        dd.classList.remove('open');
+        // mark active
+        list.querySelectorAll('.stylist-dd__item').forEach(function (li) {
+          li.classList.toggle('active', li.dataset.value === value);
+        });
         updateSummary();
       }
 
-      // "No preference" card — always first
-      var noPref = document.createElement('button');
-      noPref.type = 'button';
-      noPref.className = 'stylist-card selected';
-      noPref.dataset.value = 'No preference';
-      noPref.innerHTML =
-        '<span class="stylist-card__avatar stylist-card__avatar--any" aria-hidden="true">?</span>' +
-        '<span class="stylist-card__info"><span class="stylist-card__name">No Preference</span><span class="stylist-card__role">Any available</span></span>';
-      noPref.addEventListener('click', function () { selectCard(this); });
-      picker.appendChild(noPref);
+      /* ---- build list items ---- */
+      function addItem(value, avatarHtml, name, sub) {
+        var li = document.createElement('li');
+        li.className = 'stylist-dd__item' + (value === 'No preference' ? ' active' : '');
+        li.role = 'option';
+        li.dataset.value = value;
+        li.innerHTML = avatarHtml +
+          '<span class="stylist-dd__item-info">' +
+            '<span class="stylist-dd__item-name">' + name + '</span>' +
+            (sub ? '<span class="stylist-dd__item-role">' + sub + '</span>' : '') +
+          '</span>';
+        li.addEventListener('click', function (e) {
+          e.stopPropagation();
+          pick(value, avatarHtml, name);
+        });
+        list.appendChild(li);
+      }
+
+      var anyAvatar = '<span class="stylist-dd__avatar stylist-dd__avatar--any" aria-hidden="true">?</span>';
+      addItem('No preference', anyAvatar, 'No preference', 'Any available stylist');
 
       try {
         var res  = await fetch('/api/stylists');
         if (!res.ok) return;
         var data = await res.json();
         data.forEach(function (s) {
-          var btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'stylist-card';
-          btn.dataset.value = s.name;
-          var avatar = s.photo_url
-            ? '<img src="' + s.photo_url + '" alt="' + s.name + '" class="stylist-card__avatar" />'
-            : '<span class="stylist-card__avatar stylist-card__avatar--placeholder" aria-hidden="true">' + s.name.charAt(0) + '</span>';
-          btn.innerHTML = avatar +
-            '<span class="stylist-card__info">' +
-              '<span class="stylist-card__name">' + s.name + '</span>' +
-              '<span class="stylist-card__role">' + s.role + '</span>' +
-            '</span>';
-          btn.addEventListener('click', function () { selectCard(this); });
-          picker.appendChild(btn);
+          var av = s.photo_url
+            ? '<img src="' + s.photo_url + '" alt="' + s.name + '" class="stylist-dd__avatar stylist-dd__avatar-img" />'
+            : '<span class="stylist-dd__avatar stylist-dd__avatar--initial" aria-hidden="true">' + s.name.charAt(0) + '</span>';
+          addItem(s.name, av, s.name, s.role);
         });
       } catch (_) {}
     }
