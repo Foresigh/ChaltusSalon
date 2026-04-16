@@ -32,62 +32,154 @@ if (resend) {
   console.warn('⚠  RESEND_API_KEY not set — email notifications are disabled');
 }
 
-async function sendBookingEmails(booking) {
-  if (!resend) return;
-  const { client_name, client_email, client_phone, service_name,
-          stylist_name, preferred_date, preferred_time, message, id } = booking;
+// ── Shared email template ────────────────────────────────────────────────────
+async function buildEmailHTML({ type, booking, stylistRow, serviceRow }) {
+  const { client_name, service_name, stylist_name, preferred_date, preferred_time, id } = booking;
 
   const dateLabel = new Date(preferred_date + 'T12:00:00').toLocaleDateString('en-US',
     { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-  // ── Notify Chaltu ────────────────────────────────────────────────────────
+  const price      = serviceRow ? (serviceRow.price_is_from ? `From $${serviceRow.price}` : `$${serviceRow.price}`) : '';
+  const photoUrl   = stylistRow && stylistRow.photo_url ? stylistRow.photo_url : '';
+  const stylistInitial = stylist_name && stylist_name !== 'Any stylist' ? stylist_name.charAt(0) : '✂';
+
+  const stylistAvatar = photoUrl
+    ? `<img src="${photoUrl}" width="64" height="64" alt="${stylist_name}"
+         style="width:64px;height:64px;border-radius:50%;object-fit:cover;display:block;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.15);" />`
+    : `<div style="width:64px;height:64px;border-radius:50%;background:#1a1a1a;color:#fff;font-size:24px;
+         display:flex;align-items:center;justify-content:center;border:3px solid #fff;
+         box-shadow:0 2px 8px rgba(0,0,0,0.15);line-height:64px;text-align:center;">${stylistInitial}</div>`;
+
+  const bannerColor  = type === 'cancelled' ? '#c0392b' : '#1a1a1a';
+  const bannerText   = type === 'pending'   ? 'Appointment Requested'
+                     : type === 'confirmed' ? 'Appointment Confirmed ✓'
+                     :                        'Appointment Cancelled';
+  const subText      = type === 'pending'   ? `Hi ${client_name}, we received your booking request. We'll confirm within 24 hours.`
+                     : type === 'confirmed' ? `Hi ${client_name}, your appointment is all set. We look forward to seeing you!`
+                     :                        `Hi ${client_name}, unfortunately your appointment has been cancelled. Please call us to rebook.`;
+
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f4f4f4;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:32px 16px;">
+<tr><td align="center">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+  <!-- Header -->
+  <tr><td style="background:${bannerColor};padding:32px 32px 24px;text-align:center;">
+    <p style="margin:0 0 4px;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.6);">Chaltus Salon</p>
+    <h1 style="margin:0;font-size:22px;font-weight:600;color:#fff;">${bannerText}</h1>
+  </td></tr>
+
+  <!-- Stylist row -->
+  ${stylist_name && stylist_name !== 'Any stylist' ? `
+  <tr><td style="padding:24px 32px 0;text-align:center;">
+    <div style="display:inline-block;">
+      ${stylistAvatar}
+      <p style="margin:8px 0 0;font-size:14px;font-weight:600;color:#111;">${stylist_name}</p>
+      ${stylistRow ? `<p style="margin:2px 0 0;font-size:12px;color:#888;">${stylistRow.role}</p>` : ''}
+    </div>
+  </td></tr>` : ''}
+
+  <!-- Sub text -->
+  <tr><td style="padding:20px 32px 0;text-align:center;">
+    <p style="margin:0;font-size:14px;color:#555;line-height:1.6;">${subText}</p>
+  </td></tr>
+
+  <!-- Booking details card -->
+  <tr><td style="padding:24px 32px;">
+    <table width="100%" cellpadding="0" cellspacing="0"
+      style="background:#f9f9f9;border-radius:8px;border:1px solid #eee;overflow:hidden;">
+      <tr style="border-bottom:1px solid #eee;">
+        <td style="padding:12px 16px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#999;width:100px;">Service</td>
+        <td style="padding:12px 16px;font-size:14px;font-weight:600;color:#111;">${service_name}${price ? ` <span style="font-weight:400;color:#888;font-size:13px;">· ${price}</span>` : ''}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #eee;">
+        <td style="padding:12px 16px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#999;">Date</td>
+        <td style="padding:12px 16px;font-size:14px;font-weight:600;color:#111;">${dateLabel}</td>
+      </tr>
+      <tr>
+        <td style="padding:12px 16px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#999;">Time</td>
+        <td style="padding:12px 16px;font-size:14px;font-weight:600;color:#111;">${preferred_time}</td>
+      </tr>
+    </table>
+  </td></tr>
+
+  ${type === 'cancelled' ? `
+  <!-- Rebook CTA -->
+  <tr><td style="padding:0 32px 24px;text-align:center;">
+    <a href="https://chaltusalon.com/#booking"
+       style="display:inline-block;background:#1a1a1a;color:#fff;text-decoration:none;
+              padding:12px 28px;border-radius:6px;font-size:14px;font-weight:600;">
+      Book a New Appointment
+    </a>
+  </td></tr>` : ''}
+
+  <!-- Footer -->
+  <tr><td style="background:#f9f9f9;border-top:1px solid #eee;padding:20px 32px;text-align:center;">
+    <p style="margin:0;font-size:13px;color:#888;">
+      <strong style="color:#444;">Chaltus Salon</strong><br>
+      1524 S State St, Salt Lake City, UT 84115<br>
+      <a href="tel:+18013763976" style="color:#444;">(801) 376-3976</a>
+    </p>
+    <p style="margin:12px 0 0;font-size:11px;color:#bbb;">Booking #${id} · Questions? Call or text us.</p>
+  </td></tr>
+
+</table>
+</td></tr></table>
+</body></html>`;
+}
+
+async function sendBookingEmails(booking) {
+  if (!resend) return;
+  const { client_name, client_email, client_phone, service_name, stylist_name, preferred_date, preferred_time, message, id } = booking;
+
+  const dateLabel = new Date(preferred_date + 'T12:00:00').toLocaleDateString('en-US',
+    { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  // Fetch stylist photo + service price in parallel
+  const [stylistRes, serviceRes] = await Promise.all([
+    pool.query('SELECT * FROM stylists WHERE name = $1 LIMIT 1', [stylist_name]).catch(() => ({ rows: [] })),
+    pool.query('SELECT * FROM services WHERE name = $1 LIMIT 1', [service_name]).catch(() => ({ rows: [] }))
+  ]);
+  const stylistRow = stylistRes.rows[0] || null;
+  const serviceRow = serviceRes.rows[0] || null;
+
+  // ── Notify Chaltu (plain but clear) ─────────────────────────────────────
   resend.emails.send({
     from: `Chaltus Salon <${FROM_ADDRESS}>`,
     to: SALON_EMAIL,
     subject: `New Booking Request #${id} — ${client_name}`,
     html: `
-      <h2>New Booking Request</h2>
-      <table style="border-collapse:collapse;font-family:sans-serif;font-size:15px;">
-        <tr><td style="padding:6px 16px 6px 0;color:#666">Client</td><td><strong>${client_name}</strong></td></tr>
-        <tr><td style="padding:6px 16px 6px 0;color:#666">Phone</td><td>${client_phone}</td></tr>
-        <tr><td style="padding:6px 16px 6px 0;color:#666">Email</td><td>${client_email || '—'}</td></tr>
-        <tr><td style="padding:6px 16px 6px 0;color:#666">Service</td><td>${service_name}</td></tr>
-        <tr><td style="padding:6px 16px 6px 0;color:#666">Stylist</td><td>${stylist_name}</td></tr>
-        <tr><td style="padding:6px 16px 6px 0;color:#666">Date</td><td>${dateLabel}</td></tr>
-        <tr><td style="padding:6px 16px 6px 0;color:#666">Time</td><td>${preferred_time}</td></tr>
-        ${message ? `<tr><td style="padding:6px 16px 6px 0;color:#666">Notes</td><td>${message}</td></tr>` : ''}
-      </table>
-      <p style="margin-top:16px;font-size:13px;color:#888">Booking ID: #${id} · Reply to this email or call the client to confirm.</p>
+      <div style="font-family:sans-serif;max-width:520px;color:#111;padding:24px;">
+        <h2 style="margin:0 0 16px;font-size:20px;">New Booking Request #${id}</h2>
+        <table style="border-collapse:collapse;font-size:15px;width:100%">
+          <tr><td style="padding:6px 16px 6px 0;color:#888;width:90px">Client</td><td><strong>${client_name}</strong></td></tr>
+          <tr><td style="padding:6px 16px 6px 0;color:#888">Phone</td><td>${client_phone}</td></tr>
+          <tr><td style="padding:6px 16px 6px 0;color:#888">Email</td><td>${client_email || '—'}</td></tr>
+          <tr><td style="padding:6px 16px 6px 0;color:#888">Service</td><td>${service_name}</td></tr>
+          <tr><td style="padding:6px 16px 6px 0;color:#888">Stylist</td><td>${stylist_name}</td></tr>
+          <tr><td style="padding:6px 16px 6px 0;color:#888">Date</td><td>${dateLabel}</td></tr>
+          <tr><td style="padding:6px 16px 6px 0;color:#888">Time</td><td>${preferred_time}</td></tr>
+          ${message ? `<tr><td style="padding:6px 16px 6px 0;color:#888">Notes</td><td>${message}</td></tr>` : ''}
+        </table>
+        <p style="margin-top:20px;padding:12px 16px;background:#f5f5f5;border-radius:6px;font-size:13px;color:#555;">
+          Log into the admin panel to confirm or cancel this booking.
+        </p>
+      </div>
     `
   }).then(() => console.log('✔  Salon notification sent')).catch(e => console.error('✗  Salon email failed:', e.message));
 
-  // ── Confirm to customer (only if they provided an email) ─────────────────
+  // ── Customer receipt ─────────────────────────────────────────────────────
   if (!client_email) return;
+  const html = await buildEmailHTML({ type: 'pending', booking, stylistRow, serviceRow });
   resend.emails.send({
     from: `Chaltus Salon <${FROM_ADDRESS}>`,
     to: client_email,
-    subject: `Your appointment request at Chaltus Salon — ${dateLabel}`,
-    html: `
-      <div style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#111">
-        <h2 style="margin-bottom:4px">We received your request!</h2>
-        <p style="color:#555;margin-top:0">We'll call or text you within 24 hours to confirm.</p>
-        <hr style="border:none;border-top:1px solid #eee;margin:20px 0">
-        <table style="border-collapse:collapse;font-size:15px;width:100%">
-          <tr><td style="padding:6px 0;color:#888;width:110px">Service</td><td><strong>${service_name}</strong></td></tr>
-          <tr><td style="padding:6px 0;color:#888">Stylist</td><td>${stylist_name}</td></tr>
-          <tr><td style="padding:6px 0;color:#888">Date</td><td>${dateLabel}</td></tr>
-          <tr><td style="padding:6px 0;color:#888">Time</td><td>${preferred_time}</td></tr>
-        </table>
-        <hr style="border:none;border-top:1px solid #eee;margin:20px 0">
-        <p style="font-size:14px;color:#555">
-          <strong>Chaltus Salon</strong><br>
-          1524 S State St, Salt Lake City, UT 84115<br>
-          <a href="tel:+18013763976" style="color:#111">(801) 376-3976</a>
-        </p>
-        <p style="font-size:12px;color:#aaa">Need to change your request? Call or text us at (801) 376-3976.</p>
-      </div>
-    `
-  }).then(() => console.log('✔  Customer confirmation sent to', client_email)).catch(e => console.error('✗  Customer email failed:', e.message));
+    subject: `We received your request — ${dateLabel}`,
+    html
+  }).then(() => console.log('✔  Customer confirmation sent to', client_email))
+    .catch(e => console.error('✗  Customer email failed:', e.message));
 }
 const JWT_SECRET    = process.env.JWT_SECRET || 'chaltus-salon-2024-change-in-prod';
 const USE_CLOUDINARY = !!process.env.CLOUDINARY_URL;
@@ -452,49 +544,25 @@ app.patch('/api/bookings/:id', auth, async (req, res) => {
         const dateLabel = new Date(b.preferred_date + 'T12:00:00').toLocaleDateString('en-US',
           { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-        const isConfirmed = req.body.status === 'confirmed';
+        const [stylistRes, serviceRes] = await Promise.all([
+          pool.query('SELECT * FROM stylists WHERE name = $1 LIMIT 1', [b.stylist_name]).catch(() => ({ rows: [] })),
+          pool.query('SELECT * FROM services WHERE name = $1 LIMIT 1', [b.service_name]).catch(() => ({ rows: [] }))
+        ]);
+
+        const html = await buildEmailHTML({
+          type: req.body.status,
+          booking: b,
+          stylistRow: stylistRes.rows[0] || null,
+          serviceRow: serviceRes.rows[0] || null
+        });
+
         resend.emails.send({
           from: `Chaltus Salon <${FROM_ADDRESS}>`,
           to: b.client_email,
-          subject: isConfirmed
+          subject: req.body.status === 'confirmed'
             ? `Your appointment is confirmed — ${dateLabel}`
             : `Your appointment has been cancelled — ${dateLabel}`,
-          html: isConfirmed ? `
-            <div style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#111">
-              <h2 style="margin-bottom:4px">Your appointment is confirmed!</h2>
-              <p style="color:#555;margin-top:0">We look forward to seeing you.</p>
-              <hr style="border:none;border-top:1px solid #eee;margin:20px 0">
-              <table style="border-collapse:collapse;font-size:15px;width:100%">
-                <tr><td style="padding:6px 0;color:#888;width:110px">Service</td><td><strong>${b.service_name}</strong></td></tr>
-                <tr><td style="padding:6px 0;color:#888">Stylist</td><td>${b.stylist_name}</td></tr>
-                <tr><td style="padding:6px 0;color:#888">Date</td><td>${dateLabel}</td></tr>
-                <tr><td style="padding:6px 0;color:#888">Time</td><td>${b.preferred_time}</td></tr>
-              </table>
-              <hr style="border:none;border-top:1px solid #eee;margin:20px 0">
-              <p style="font-size:14px;color:#555">
-                <strong>Chaltus Salon</strong><br>
-                1524 S State St, Salt Lake City, UT 84115<br>
-                <a href="tel:+18013763976" style="color:#111">(801) 376-3976</a>
-              </p>
-              <p style="font-size:12px;color:#aaa">Need to reschedule? Call or text us at (801) 376-3976.</p>
-            </div>
-          ` : `
-            <div style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#111">
-              <h2 style="margin-bottom:4px">Your appointment has been cancelled</h2>
-              <p style="color:#555;margin-top:0">We're sorry for the inconvenience.</p>
-              <hr style="border:none;border-top:1px solid #eee;margin:20px 0">
-              <table style="border-collapse:collapse;font-size:15px;width:100%">
-                <tr><td style="padding:6px 0;color:#888;width:110px">Service</td><td><strong>${b.service_name}</strong></td></tr>
-                <tr><td style="padding:6px 0;color:#888">Date</td><td>${dateLabel}</td></tr>
-                <tr><td style="padding:6px 0;color:#888">Time</td><td>${b.preferred_time}</td></tr>
-              </table>
-              <hr style="border:none;border-top:1px solid #eee;margin:20px 0">
-              <p style="font-size:14px;color:#555">
-                To rebook, visit our website or call us:<br>
-                <a href="tel:+18013763976" style="color:#111">(801) 376-3976</a>
-              </p>
-            </div>
-          `
+          html
         }).then(() => console.log(`✔  ${req.body.status} email sent to`, b.client_email))
           .catch(e => console.error(`✗  Status email failed:`, e.message));
       }
