@@ -256,7 +256,7 @@ $('#gallery-upload-btn').addEventListener('click', async () => {
   status.className = 'upload-status';
   status.textContent = 'Uploading…';
 
-  let ok = 0;
+  let ok = 0; let lastErr = '';
   for (const file of pendingFiles) {
     const fd = new FormData();
     fd.append('image', file);
@@ -264,9 +264,12 @@ $('#gallery-upload-btn').addEventListener('click', async () => {
     fd.append('label', label);
     const res = await apiUpload('/api/gallery', fd);
     if (res?.id) ok++;
+    else if (res?.error) lastErr = res.error;
   }
   status.className = ok ? 'upload-status success' : 'upload-status error';
-  status.textContent = ok ? `✓ ${ok} photo(s) uploaded successfully.` : 'Upload failed — try again.';
+  status.textContent = ok
+    ? `✓ ${ok} photo(s) uploaded successfully.`
+    : `Upload failed — ${lastErr || 'try again.'}`;
   pendingFiles = [];
   $('#gallery-upload-btn').disabled = true;
   $('#gallery-file-input').value = '';

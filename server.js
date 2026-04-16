@@ -140,7 +140,10 @@ app.post('/api/gallery', auth, upload.single('image'), async (req, res) => {
       [filename, url, alt_text, label]
     );
     res.json(toGalleryItem(rows[0]));
-  } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }); }
+  } catch (err) {
+    console.error('Gallery upload error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.put('/api/gallery/:id', auth, async (req, res) => {
