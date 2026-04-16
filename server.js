@@ -12,28 +12,28 @@ const jwt        = require('jsonwebtoken');
 const multer     = require('multer');
 const cors       = require('cors');
 const cloudinary = require('cloudinary').v2;
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const { pool, initDB } = require('./db');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
-// ── Email setup ──────────────────────────────────────────────────────────────
-// Set EMAIL_USER + EMAIL_PASS (Gmail App Password) in Railway env vars to enable.
+// ── Email setup (Resend) ─────────────────────────────────────────────────────
+// Set RESEND_API_KEY + SALON_NOTIFY_EMAIL in Railway env vars to enable.
 // Without them the booking still saves — emails are just skipped.
-const SALON_EMAIL = process.env.EMAIL_USER || '';
-const mailer = SALON_EMAIL ? nodemailer.createTransport({
-  service: 'gmail',
-  auth: { user: SALON_EMAIL, pass: process.env.EMAIL_PASS || '' }
-}) : null;
-if (mailer) {
-  console.log('✔  Email configured — notifications will send to', SALON_EMAIL);
+const RESEND_KEY      = process.env.RESEND_API_KEY || '';
+const SALON_EMAIL     = process.env.SALON_NOTIFY_EMAIL || process.env.EMAIL_USER || '';
+const resend          = RESEND_KEY ? new Resend(RESEND_KEY) : null;
+const FROM_ADDRESS    = process.env.FROM_EMAIL || 'onboarding@resend.dev';
+
+if (resend) {
+  console.log('✔  Email configured via Resend — notifications → ', SALON_EMAIL);
 } else {
-  console.warn('⚠  EMAIL_USER not set — email notifications are disabled');
+  console.warn('⚠  RESEND_API_KEY not set — email notifications are disabled');
 }
 
 async function sendBookingEmails(booking) {
-  if (!mailer) return; // email not configured — silent skip
+  if (!resend) return;
   const { client_name, client_email, client_phone, service_name,
           stylist_name, preferred_date, preferred_time, message, id } = booking;
 
@@ -41,8 +41,8 @@ async function sendBookingEmails(booking) {
     { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
   // ── Notify Chaltu ────────────────────────────────────────────────────────
-  mailer.sendMail({
-    from: `"Chaltus Salon" <${SALON_EMAIL}>`,
+  resend.emails.send({
+    from: `Chaltus Salon <${FROM_ADDRESS}>`,
     to: SALON_EMAIL,
     subject: `New Booking Request #${id} — ${client_name}`,
     html: `
@@ -63,8 +63,8 @@ async function sendBookingEmails(booking) {
 
   // ── Confirm to customer (only if they provided an email) ─────────────────
   if (!client_email) return;
-  mailer.sendMail({
-    from: `"Chaltus Salon" <${SALON_EMAIL}>`,
+  resend.emails.send({
+    from: `Chaltus Salon <${FROM_ADDRESS}>`,
     to: client_email,
     subject: `Your appointment request at Chaltus Salon — ${dateLabel}`,
     html: `
