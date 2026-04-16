@@ -347,9 +347,19 @@
           '<span class="cal-day__num">'  + day.getDate() + '</span>';
 
         if (!isPast && !isClosed) {
-          var ds = day.toISOString().slice(0, 10);
+          // Build date string using LOCAL date parts to avoid UTC offset issues
+          var ds = day.getFullYear() + '-' +
+            String(day.getMonth() + 1).padStart(2, '0') + '-' +
+            String(day.getDate()).padStart(2, '0');
           btn.dataset.date = ds;
           btn.addEventListener('click', function () {
+            // Re-check at click-time in case the page has been open since yesterday
+            var clickDay = new Date(this.dataset.date + 'T00:00:00');
+            var todayNow = new Date(); todayNow.setHours(0, 0, 0, 0);
+            if (clickDay < todayNow) {
+              renderCalendar(); // refresh to mark newly-past dates
+              return;
+            }
             weekEl.querySelectorAll('.cal-day').forEach(function (b) { b.classList.remove('cal-day--selected'); });
             this.classList.add('cal-day--selected');
             state.date = this.dataset.date;
@@ -393,11 +403,14 @@
       } catch (_) {}
 
       // For today: disable slots that are already past (+ 30 min buffer)
-      var todayStr = new Date().toISOString().slice(0, 10);
+      // Use LOCAL date parts — toISOString() is UTC and gives wrong date for US timezones at night
+      var _n = new Date();
+      var todayStr = _n.getFullYear() + '-' +
+        String(_n.getMonth() + 1).padStart(2, '0') + '-' +
+        String(_n.getDate()).padStart(2, '0');
       var nowMinutes = -1;
       if (date === todayStr) {
-        var now = new Date();
-        nowMinutes = now.getHours() * 60 + now.getMinutes() + 30; // 30-min booking buffer
+        nowMinutes = _n.getHours() * 60 + _n.getMinutes() + 30; // 30-min booking buffer
       }
 
       var p = date.split('-');
