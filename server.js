@@ -50,7 +50,7 @@ async function buildEmailHTML({ type, booking, stylistRow, serviceRow }) {
          display:flex;align-items:center;justify-content:center;border:3px solid #fff;
          box-shadow:0 2px 8px rgba(0,0,0,0.15);line-height:64px;text-align:center;">${stylistInitial}</div>`;
 
-  const bannerColor  = type === 'cancelled' ? '#c0392b' : '#1a1a1a';
+  const bannerColor  = type === 'cancelled' ? '#c0392b' : type === 'confirmed' ? '#1a6b3c' : '#1a1a1a';
   const bannerText   = type === 'pending'   ? 'Appointment Requested'
                      : type === 'confirmed' ? 'Appointment Confirmed ✓'
                      :                        'Appointment Cancelled';
