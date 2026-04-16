@@ -443,6 +443,63 @@ app.patch('/api/bookings/:id', auth, async (req, res) => {
     const valid = ['pending', 'confirmed', 'completed', 'cancelled'];
     if (!valid.includes(req.body.status)) return res.status(400).json({ error: 'Invalid status' });
     await pool.query('UPDATE bookings SET status = $1 WHERE id = $2', [req.body.status, req.params.id]);
+
+    // Fire status-change email if customer has an email on file
+    if (resend && (req.body.status === 'confirmed' || req.body.status === 'cancelled')) {
+      const { rows } = await pool.query('SELECT * FROM bookings WHERE id = $1', [req.params.id]);
+      if (rows[0] && rows[0].client_email) {
+        const b = rows[0];
+        const dateLabel = new Date(b.preferred_date + 'T12:00:00').toLocaleDateString('en-US',
+          { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+        const isConfirmed = req.body.status === 'confirmed';
+        resend.emails.send({
+          from: `Chaltus Salon <${FROM_ADDRESS}>`,
+          to: b.client_email,
+          subject: isConfirmed
+            ? `Your appointment is confirmed — ${dateLabel}`
+            : `Your appointment has been cancelled — ${dateLabel}`,
+          html: isConfirmed ? `
+            <div style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#111">
+              <h2 style="margin-bottom:4px">Your appointment is confirmed!</h2>
+              <p style="color:#555;margin-top:0">We look forward to seeing you.</p>
+              <hr style="border:none;border-top:1px solid #eee;margin:20px 0">
+              <table style="border-collapse:collapse;font-size:15px;width:100%">
+                <tr><td style="padding:6px 0;color:#888;width:110px">Service</td><td><strong>${b.service_name}</strong></td></tr>
+                <tr><td style="padding:6px 0;color:#888">Stylist</td><td>${b.stylist_name}</td></tr>
+                <tr><td style="padding:6px 0;color:#888">Date</td><td>${dateLabel}</td></tr>
+                <tr><td style="padding:6px 0;color:#888">Time</td><td>${b.preferred_time}</td></tr>
+              </table>
+              <hr style="border:none;border-top:1px solid #eee;margin:20px 0">
+              <p style="font-size:14px;color:#555">
+                <strong>Chaltus Salon</strong><br>
+                1524 S State St, Salt Lake City, UT 84115<br>
+                <a href="tel:+18013763976" style="color:#111">(801) 376-3976</a>
+              </p>
+              <p style="font-size:12px;color:#aaa">Need to reschedule? Call or text us at (801) 376-3976.</p>
+            </div>
+          ` : `
+            <div style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#111">
+              <h2 style="margin-bottom:4px">Your appointment has been cancelled</h2>
+              <p style="color:#555;margin-top:0">We're sorry for the inconvenience.</p>
+              <hr style="border:none;border-top:1px solid #eee;margin:20px 0">
+              <table style="border-collapse:collapse;font-size:15px;width:100%">
+                <tr><td style="padding:6px 0;color:#888;width:110px">Service</td><td><strong>${b.service_name}</strong></td></tr>
+                <tr><td style="padding:6px 0;color:#888">Date</td><td>${dateLabel}</td></tr>
+                <tr><td style="padding:6px 0;color:#888">Time</td><td>${b.preferred_time}</td></tr>
+              </table>
+              <hr style="border:none;border-top:1px solid #eee;margin:20px 0">
+              <p style="font-size:14px;color:#555">
+                To rebook, visit our website or call us:<br>
+                <a href="tel:+18013763976" style="color:#111">(801) 376-3976</a>
+              </p>
+            </div>
+          `
+        }).then(() => console.log(`✔  ${req.body.status} email sent to`, b.client_email))
+          .catch(e => console.error(`✗  Status email failed:`, e.message));
+      }
+    }
+
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
