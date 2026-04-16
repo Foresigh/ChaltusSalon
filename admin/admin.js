@@ -132,28 +132,76 @@ function updatePendingBadge(n) {
 }
 
 // ── Bookings ───────────────────────────────────────────────────────────────────
+const SCHEDULE_SLOTS = [
+  '10:00 AM','10:30 AM','11:00 AM','11:30 AM',
+  '12:00 PM','12:30 PM','1:00 PM','1:30 PM',
+  '2:00 PM','2:30 PM','3:00 PM','3:30 PM',
+  '4:00 PM','4:30 PM','5:00 PM','5:30 PM'
+];
+
+let schedDate = new Date();
+schedDate.setHours(0,0,0,0);
+
+function todayStr() {
+  const n = new Date();
+  return n.getFullYear() + '-' + String(n.getMonth()+1).padStart(2,'0') + '-' + String(n.getDate()).padStart(2,'0');
+}
+
+function dateToStr(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+// ── View toggle ───────────────────────────────────────────────────────────────
+$('#view-list-btn').addEventListener('click', () => {
+  $('#view-list-btn').classList.add('active');
+  $('#view-schedule-btn').classList.remove('active');
+  $('#booking-list-view').hidden = false;
+  $('#booking-schedule-view').hidden = true;
+});
+$('#view-schedule-btn').addEventListener('click', () => {
+  $('#view-schedule-btn').classList.add('active');
+  $('#view-list-btn').classList.remove('active');
+  $('#booking-schedule-view').hidden = false;
+  $('#booking-list-view').hidden = true;
+  loadSchedule();
+});
+
+// ── List view ─────────────────────────────────────────────────────────────────
 async function loadBookings() {
-  const status = $('#booking-filter-status').value;
-  const date   = $('#booking-filter-date').value;
-  const params = new URLSearchParams();
-  if (status) params.set('status', status);
-  if (date)   params.set('date', date);
+  const status  = $('#booking-filter-status').value;
+  const date    = $('#booking-filter-date').value;
+  const stylist = $('#booking-filter-stylist').value;
+  const params  = new URLSearchParams();
+  if (status)  params.set('status', status);
+  if (date)    params.set('date', date);
+  if (stylist) params.set('stylist', stylist);
   const data = await apiFetch(`/api/bookings?${params}`);
   if (!data) return;
   renderBookingRows($('#bookings-table tbody'), data, false);
 }
 
+async function populateStylistFilter() {
+  const data = await apiFetch('/api/stylists');
+  if (!data) return;
+  const sel = $('#booking-filter-stylist');
+  data.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.name; o.textContent = s.name;
+    sel.appendChild(o);
+  });
+}
+
 function renderBookingRows(tbody, rows, compact) {
-  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="10" class="empty-state">No bookings yet.</td></tr>`; return; }
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="10" class="empty-state">No bookings found.</td></tr>`; return; }
   tbody.innerHTML = rows.map(b => `
-    <tr data-id="${b.id}">
+    <tr class="booking-row" data-id="${b.id}" style="cursor:pointer;">
       ${compact ? '' : `<td>#${b.id}</td>`}
       <td><strong>${escHTML(b.client_name)}</strong><br><span style="font-size:.75rem;color:var(--gray-400)">${escHTML(b.client_email)}</span></td>
       ${compact ? '' : `<td>${escHTML(b.client_phone)}</td>`}
       <td>${escHTML(b.service_name)}</td>
       ${compact ? '' : `<td>${escHTML(b.stylist_name)}</td>`}
       <td>${fmt(b.preferred_date)}</td>
-      <td>${escHTML(b.preferred_time)}</td>
+      <td><strong>${escHTML(b.preferred_time)}</strong></td>
       <td>${statusBadge(b.status)}</td>
       ${compact ? '' : `<td style="max-width:140px;font-size:.78rem;color:var(--gray-500)">${escHTML(b.message)}</td>`}
       <td>
@@ -171,16 +219,23 @@ function renderBookingRows(tbody, rows, compact) {
     </tr>
   `).join('');
 
-  // Status change
-  tbody.querySelectorAll('.status-select').forEach(sel => {
-    sel.addEventListener('change', async () => {
-      await apiFetch(`/api/bookings/${sel.dataset.id}`, { method: 'PATCH', body: JSON.stringify({ status: sel.value }) });
-      sel.closest('tr').querySelector('.status').className = `status status--${sel.value}`;
-      sel.closest('tr').querySelector('.status').textContent = sel.value;
+  tbody.querySelectorAll('.booking-row').forEach(row => {
+    row.addEventListener('click', e => {
+      if (e.target.closest('.status-select') || e.target.closest('.del-booking')) return;
+      const id = row.dataset.id;
+      const b  = rows.find(r => String(r.id) === id);
+      if (b) openBookingModal(b);
     });
   });
 
-  // Delete
+  tbody.querySelectorAll('.status-select').forEach(sel => {
+    sel.addEventListener('change', async () => {
+      await apiFetch(`/api/bookings/${sel.dataset.id}`, { method: 'PATCH', body: JSON.stringify({ status: sel.value }) });
+      const badge = sel.closest('tr').querySelector('.status');
+      if (badge) { badge.className = `status status--${sel.value}`; badge.textContent = sel.value; }
+    });
+  });
+
   tbody.querySelectorAll('.del-booking').forEach(btn => {
     btn.addEventListener('click', async () => {
       if (!await confirm('Delete this booking permanently?')) return;
@@ -191,13 +246,114 @@ function renderBookingRows(tbody, rows, compact) {
 }
 
 $('#booking-filter-status').addEventListener('change', loadBookings);
+$('#booking-filter-stylist').addEventListener('change', loadBookings);
 $('#booking-filter-date').addEventListener('change', loadBookings);
+$('#booking-today-btn').addEventListener('click', () => {
+  $('#booking-filter-date').value = todayStr();
+  loadBookings();
+});
 $('#booking-filter-clear').addEventListener('click', () => {
-  $('#booking-filter-status').value = '';
-  $('#booking-filter-date').value   = '';
+  $('#booking-filter-status').value  = '';
+  $('#booking-filter-stylist').value = '';
+  $('#booking-filter-date').value    = '';
   loadBookings();
 });
 $('#booking-refresh').addEventListener('click', loadBookings);
+
+// ── Schedule view ─────────────────────────────────────────────────────────────
+async function loadSchedule() {
+  const dateStr = dateToStr(schedDate);
+  const label   = schedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  $('#sched-date-label').textContent = label;
+
+  const [stylists, bookings] = await Promise.all([
+    apiFetch('/api/stylists'),
+    apiFetch(`/api/bookings?date=${dateStr}`)
+  ]);
+  if (!stylists || !bookings) return;
+
+  // Build lookup: "stylist|time" -> booking
+  const lookup = {};
+  bookings.forEach(b => { lookup[`${b.stylist_name}|${b.preferred_time}`] = b; });
+
+  const cols = stylists.map(s => s.name);
+  if (!cols.length) { $('#sched-wrap').innerHTML = '<p class="empty-state">No stylists found.</p>'; return; }
+
+  let html = `<table class="sched-table">
+    <thead><tr><th class="sched-time-col">Time</th>${cols.map(c => `<th>${escHTML(c)}</th>`).join('')}</tr></thead>
+    <tbody>`;
+
+  SCHEDULE_SLOTS.forEach(slot => {
+    html += `<tr><td class="sched-time-cell">${slot}</td>`;
+    cols.forEach(stylist => {
+      const b = lookup[`${stylist}|${slot}`];
+      if (b) {
+        html += `<td class="sched-cell sched-cell--${b.status}" data-id="${b.id}">
+          <span class="sched-name">${escHTML(b.client_name)}</span>
+          <span class="sched-svc">${escHTML(b.service_name)}</span>
+          <span class="sched-phone">${escHTML(b.client_phone)}</span>
+        </td>`;
+      } else {
+        html += `<td class="sched-cell sched-cell--empty"></td>`;
+      }
+    });
+    html += `</tr>`;
+  });
+
+  html += `</tbody></table>`;
+  $('#sched-wrap').innerHTML = html;
+
+  // Click cell to open modal
+  $$('.sched-cell[data-id]', $('#sched-wrap')).forEach(cell => {
+    cell.addEventListener('click', () => {
+      const b = bookings.find(r => String(r.id) === cell.dataset.id);
+      if (b) openBookingModal(b);
+    });
+  });
+}
+
+$('#sched-prev').addEventListener('click',    () => { schedDate.setDate(schedDate.getDate()-1); loadSchedule(); });
+$('#sched-next').addEventListener('click',    () => { schedDate.setDate(schedDate.getDate()+1); loadSchedule(); });
+$('#sched-today').addEventListener('click',   () => { schedDate = new Date(); schedDate.setHours(0,0,0,0); loadSchedule(); });
+$('#sched-refresh').addEventListener('click', () => loadSchedule());
+
+// ── Booking detail modal ──────────────────────────────────────────────────────
+let modalBookingId = null;
+
+function openBookingModal(b) {
+  modalBookingId = b.id;
+  $('#modal-title').textContent = `Booking #${b.id} — ${b.client_name}`;
+  $('#modal-status-select').value = b.status;
+  const dateLabel = new Date(b.preferred_date + 'T00:00:00').toLocaleDateString('en-US',
+    { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  $('#modal-body').innerHTML = `
+    <div class="modal-detail-grid">
+      <div class="modal-detail-row"><span class="modal-detail-key">Client</span><span class="modal-detail-val"><strong>${escHTML(b.client_name)}</strong></span></div>
+      <div class="modal-detail-row"><span class="modal-detail-key">Phone</span><span class="modal-detail-val"><a href="tel:${escHTML(b.client_phone)}">${escHTML(b.client_phone)}</a></span></div>
+      <div class="modal-detail-row"><span class="modal-detail-key">Email</span><span class="modal-detail-val">${b.client_email ? `<a href="mailto:${escHTML(b.client_email)}">${escHTML(b.client_email)}</a>` : '—'}</span></div>
+      <div class="modal-detail-row"><span class="modal-detail-key">Service</span><span class="modal-detail-val">${escHTML(b.service_name)}</span></div>
+      <div class="modal-detail-row"><span class="modal-detail-key">Stylist</span><span class="modal-detail-val">${escHTML(b.stylist_name)}</span></div>
+      <div class="modal-detail-row"><span class="modal-detail-key">Date</span><span class="modal-detail-val">${dateLabel}</span></div>
+      <div class="modal-detail-row"><span class="modal-detail-key">Time</span><span class="modal-detail-val"><strong>${escHTML(b.preferred_time)}</strong></span></div>
+      <div class="modal-detail-row"><span class="modal-detail-key">Status</span><span class="modal-detail-val">${statusBadge(b.status)}</span></div>
+      ${b.message ? `<div class="modal-detail-row"><span class="modal-detail-key">Notes</span><span class="modal-detail-val">${escHTML(b.message)}</span></div>` : ''}
+      <div class="modal-detail-row"><span class="modal-detail-key">Booked</span><span class="modal-detail-val">${new Date(b.created_at).toLocaleString('en-US')}</span></div>
+    </div>`;
+  $('#booking-modal').hidden = false;
+}
+
+$('#modal-close').addEventListener('click',  () => { $('#booking-modal').hidden = true; });
+$('#modal-cancel-btn').addEventListener('click', () => { $('#booking-modal').hidden = true; });
+$('#booking-modal').addEventListener('click', e => { if (e.target === $('#booking-modal')) $('#booking-modal').hidden = true; });
+
+$('#modal-save-btn').addEventListener('click', async () => {
+  const newStatus = $('#modal-status-select').value;
+  await apiFetch(`/api/bookings/${modalBookingId}`, { method: 'PATCH', body: JSON.stringify({ status: newStatus }) });
+  $('#booking-modal').hidden = true;
+  // Refresh whichever view is active
+  if (!$('#booking-list-view').hidden) loadBookings();
+  else loadSchedule();
+});
 
 // ── Gallery ────────────────────────────────────────────────────────────────────
 let pendingFiles = [];
@@ -490,6 +646,7 @@ $('#pw-form').addEventListener('submit', async e => {
 function bootApp() {
   $('#login-screen').hidden = true;
   $('#app').hidden = false;
+  populateStylistFilter();
   switchTab('dashboard');
 }
 

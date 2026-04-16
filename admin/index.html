@@ -113,27 +113,81 @@
 
       <!-- ── BOOKINGS ── -->
       <section data-panel="bookings" class="panel">
+        <!-- View toggle -->
         <div class="toolbar">
           <div class="toolbar__left">
-            <select id="booking-filter-status" class="select-sm">
-              <option value="">All statuses</option>
+            <div class="view-toggle">
+              <button class="view-toggle__btn active" id="view-list-btn">≡ List</button>
+              <button class="view-toggle__btn" id="view-schedule-btn">⊞ Schedule</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- List view -->
+        <div id="booking-list-view">
+          <div class="toolbar">
+            <div class="toolbar__left">
+              <select id="booking-filter-status" class="select-sm">
+                <option value="">All statuses</option>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+              <select id="booking-filter-stylist" class="select-sm">
+                <option value="">All stylists</option>
+              </select>
+              <input type="date" id="booking-filter-date" class="input-sm" />
+              <button class="btn btn-sm btn-outline" id="booking-today-btn">Today</button>
+              <button class="btn btn-sm btn-outline" id="booking-filter-clear">Clear</button>
+            </div>
+            <button class="btn btn-sm btn-primary" id="booking-refresh">↻ Refresh</button>
+          </div>
+          <div class="card">
+            <div class="table-wrap"><table id="bookings-table">
+              <thead><tr><th>#</th><th>Client</th><th>Phone</th><th>Service</th><th>Stylist</th><th>Date</th><th>Time</th><th>Status</th><th>Notes</th><th>Actions</th></tr></thead>
+              <tbody></tbody>
+            </table></div>
+          </div>
+        </div>
+
+        <!-- Schedule view -->
+        <div id="booking-schedule-view" hidden>
+          <div class="toolbar">
+            <div class="toolbar__left">
+              <button class="btn btn-sm btn-outline" id="sched-prev">←</button>
+              <strong id="sched-date-label" style="min-width:180px;text-align:center;"></strong>
+              <button class="btn btn-sm btn-outline" id="sched-next">→</button>
+              <button class="btn btn-sm btn-outline" id="sched-today">Today</button>
+            </div>
+            <button class="btn btn-sm btn-primary" id="sched-refresh">↻ Refresh</button>
+          </div>
+          <div class="card">
+            <div class="table-wrap" id="sched-wrap"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Booking detail modal -->
+      <div id="booking-modal" class="modal-overlay" hidden>
+        <div class="modal-box">
+          <div class="modal-box__head">
+            <h3 id="modal-title">Booking Details</h3>
+            <button class="modal-close" id="modal-close">✕</button>
+          </div>
+          <div class="modal-box__body" id="modal-body"></div>
+          <div class="modal-box__foot">
+            <select id="modal-status-select" class="select-sm">
               <option value="pending">Pending</option>
               <option value="confirmed">Confirmed</option>
               <option value="completed">Completed</option>
               <option value="cancelled">Cancelled</option>
             </select>
-            <input type="date" id="booking-filter-date" class="input-sm" />
-            <button class="btn btn-sm btn-outline" id="booking-filter-clear">Clear</button>
+            <button class="btn btn-primary" id="modal-save-btn">Save Status</button>
+            <button class="btn btn-outline" id="modal-cancel-btn">Close</button>
           </div>
-          <button class="btn btn-sm btn-primary" id="booking-refresh">↻ Refresh</button>
         </div>
-        <div class="card">
-          <div class="table-wrap"><table id="bookings-table">
-            <thead><tr><th>#</th><th>Client</th><th>Phone</th><th>Service</th><th>Stylist</th><th>Date</th><th>Time</th><th>Status</th><th>Notes</th><th>Actions</th></tr></thead>
-            <tbody></tbody>
-          </table></div>
-        </div>
-      </section>
+      </div>
 
       <!-- ── GALLERY ── -->
       <section data-panel="gallery" class="panel">
