@@ -204,24 +204,6 @@
         }).join('');
       }
 
-      // Populate service dropdown in booking form
-      const sel = document.getElementById('b-service');
-      if (sel) {
-        const cats2 = {};
-        data.forEach(function (s) { if (!cats2[s.category]) cats2[s.category] = []; cats2[s.category].push(s); });
-        Object.entries(cats2).forEach(function ([cat, services]) {
-          const grp = document.createElement('optgroup');
-          grp.label = cat;
-          services.forEach(function (s) {
-            const opt = document.createElement('option');
-            const price = s.price_is_from ? 'from $' + s.price : (s.price === 'Varies' ? 'Varies' : '$' + s.price);
-            opt.value       = s.name;
-            opt.textContent = s.name + ' — ' + price;
-            grp.appendChild(opt);
-          });
-          sel.appendChild(grp);
-        });
-      }
     } catch (_) { /* offline — static HTML stays */ }
   }
 
@@ -263,15 +245,6 @@
         }
       }
 
-      // Populate booking form dropdown
-      const sel = document.getElementById('b-stylist');
-      if (!sel) return;
-      data.forEach(function (s) {
-        const opt = document.createElement('option');
-        opt.value       = s.name;
-        opt.textContent = s.name + ' — ' + s.role;
-        sel.appendChild(opt);
-      });
     } catch (_) { /* offline */ }
   }
 
@@ -308,54 +281,278 @@
   }
 
   /* ====================================================
-     8. BOOKING FORM SUBMISSION
+     8. BOOKING WIZARD
+     Steps: Service → Stylist → Date/Time → Info → Confirm
      ==================================================== */
-  var bookingForm = document.getElementById('booking-form');
-  if (bookingForm) {
-    // Set min date to today
-    var dateInput = document.getElementById('b-date');
-    if (dateInput) {
-      dateInput.min = new Date().toISOString().slice(0, 10);
+  (function () {
+    var nextBtn   = document.getElementById('bw-next');
+    if (!nextBtn) return; // wizard not present
+
+    var backBtn   = document.getElementById('bw-back');
+    var submitBtn = document.getElementById('bw-submit');
+    var errEl     = document.getElementById('booking-error');
+    var okEl      = document.getElementById('booking-success');
+    var steps     = document.querySelectorAll('.bw-progress__step');
+
+    var state = {
+      step: 1,
+      service: '', serviceLabel: '',
+      stylist: 'No preference', stylistLabel: 'No preference',
+      date: '', time: '',
+      name: '', phone: '', email: '', notes: ''
+    };
+
+    var ALL_SLOTS = [
+      '10:00 AM','10:30 AM','11:00 AM','11:30 AM',
+      '12:00 PM','12:30 PM','1:00 PM','1:30 PM',
+      '2:00 PM','2:30 PM','3:00 PM','3:30 PM',
+      '4:00 PM','4:30 PM','5:00 PM','5:30 PM'
+    ];
+
+    function panel(n) { return document.getElementById('bw-panel-' + n); }
+
+    function goToStep(n) {
+      panel(state.step).hidden = true;
+      panel(n).hidden = false;
+      state.step = n;
+      steps.forEach(function (s) {
+        var sn = parseInt(s.dataset.step, 10);
+        s.classList.toggle('done',   sn < n);
+        s.classList.toggle('active', sn === n);
+        s.classList.remove(sn > n ? 'done' : '');
+        if (sn > n) { s.classList.remove('done'); s.classList.remove('active'); }
+      });
+      backBtn.hidden   = (n === 1);
+      nextBtn.hidden   = (n === 5);
+      submitBtn.hidden = (n !== 5);
+      errEl.hidden = true;
+      if (n === 3) initDateStep();
+      if (n === 5) buildSummary();
     }
 
-    bookingForm.addEventListener('submit', async function (e) {
-      e.preventDefault();
-      var errEl = document.getElementById('booking-error');
-      var okEl  = document.getElementById('booking-success');
-      var btn   = document.getElementById('booking-submit');
-      errEl.hidden = true;
-      okEl.hidden  = true;
-      btn.textContent = 'Sending…';
-      btn.disabled    = true;
+    /* ---- Step 3: date / time ---- */
+    function initDateStep() {
+      var d = document.getElementById('b-date');
+      if (!d) return;
+      d.min = new Date().toISOString().slice(0, 10);
+      // Only attach once
+      if (!d._wizardReady) {
+        d._wizardReady = true;
+        d.addEventListener('change', function () {
+          var val = this.value;
+          if (!val) return;
+          var day = new Date(val + 'T12:00:00').getDay();
+          if (day === 0 || day === 1) {
+            document.getElementById('bw-slots').innerHTML =
+              '<p class="bw-slots__hint">We\'re closed Sunday &amp; Monday — please pick Tue–Sat.</p>';
+            state.date = ''; state.time = '';
+            return;
+          }
+          state.date = val; state.time = '';
+          loadSlots(val);
+        });
+      }
+    }
 
-      var body = {
-        client_name:    document.getElementById('b-name').value,
-        client_phone:   document.getElementById('b-phone').value,
-        client_email:   document.getElementById('b-email').value,
-        service_name:   document.getElementById('b-service').value,
-        stylist_name:   document.getElementById('b-stylist').value,
-        preferred_date: document.getElementById('b-date').value,
-        preferred_time: document.getElementById('b-time').value,
-        message:        document.getElementById('b-message').value,
-      };
-
+    async function loadSlots(date) {
+      var el = document.getElementById('bw-slots');
+      el.innerHTML = '<p class="bw-slots__hint">Loading…</p>';
+      var booked = [];
       try {
-        var res  = await fetch('/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        var r = await fetch('/api/availability?date=' + date);
+        if (r.ok) booked = (await r.json()).booked || [];
+      } catch (_) {}
+      el.innerHTML = '<div class="bw-slots__grid">' +
+        ALL_SLOTS.map(function (slot) {
+          var taken    = booked.indexOf(slot) !== -1;
+          var selected = slot === state.time;
+          return '<button type="button" class="bw-slot' +
+            (taken ? '' : selected ? ' selected' : '') +
+            '" data-slot="' + slot + '"' +
+            (taken ? ' disabled aria-label="' + slot + ' — booked"' : '') +
+            '>' + slot + '</button>';
+        }).join('') + '</div>';
+      el.querySelectorAll('.bw-slot:not([disabled])').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          el.querySelectorAll('.bw-slot').forEach(function (b) { b.classList.remove('selected'); });
+          this.classList.add('selected');
+          state.time = this.dataset.slot;
+        });
+      });
+    }
+
+    /* ---- Step 5: summary ---- */
+    function buildSummary() {
+      var rows = [
+        ['Service',  state.serviceLabel],
+        ['Stylist',  state.stylistLabel],
+        ['Date',     formatDate(state.date)],
+        ['Time',     state.time],
+        ['Name',     state.name],
+        ['Phone',    state.phone]
+      ];
+      if (state.email) rows.push(['Email', state.email]);
+      if (state.notes) rows.push(['Notes', state.notes]);
+      document.getElementById('bw-summary').innerHTML = rows.map(function (r) {
+        return '<div class="bw-summary__row"><span class="bw-summary__key">' + r[0] +
+               '</span><span class="bw-summary__val">' + r[1] + '</span></div>';
+      }).join('');
+    }
+
+    function formatDate(s) {
+      if (!s) return '';
+      var p = s.split('-');
+      return new Date(+p[0], +p[1] - 1, +p[2]).toLocaleDateString('en-US',
+        { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
+
+    /* ---- Validation ---- */
+    function validate() {
+      if (state.step === 1 && !state.service)  { showErr('Please select a service.'); return false; }
+      if (state.step === 2 && !state.stylist)  { showErr('Please select a stylist.'); return false; }
+      if (state.step === 3) {
+        if (!state.date) { showErr('Please select a date.'); return false; }
+        if (!state.time) { showErr('Please select a time.'); return false; }
+      }
+      if (state.step === 4) {
+        var n = (document.getElementById('b-name').value  || '').trim();
+        var p = (document.getElementById('b-phone').value || '').trim();
+        if (!n) { showErr('Please enter your name.'); return false; }
+        if (!p) { showErr('Please enter your phone number.'); return false; }
+        state.name  = n;
+        state.phone = p;
+        state.email = (document.getElementById('b-email').value   || '').trim();
+        state.notes = (document.getElementById('b-message').value || '').trim();
+      }
+      return true;
+    }
+
+    function showErr(msg) {
+      errEl.textContent = msg;
+      errEl.hidden = false;
+      setTimeout(function () { errEl.hidden = true; }, 4000);
+    }
+
+    /* ---- Nav buttons ---- */
+    nextBtn.addEventListener('click', function () {
+      if (validate()) goToStep(state.step + 1);
+    });
+    backBtn.addEventListener('click', function () {
+      errEl.hidden = true;
+      goToStep(state.step - 1);
+    });
+
+    /* ---- Submit ---- */
+    submitBtn.addEventListener('click', async function () {
+      errEl.hidden = true; okEl.hidden = true;
+      submitBtn.textContent = 'Sending…';
+      submitBtn.disabled = true;
+      try {
+        var res  = await fetch('/api/bookings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            client_name:    state.name,
+            client_phone:   state.phone,
+            client_email:   state.email,
+            service_name:   state.service,
+            stylist_name:   state.stylist,
+            preferred_date: state.date,
+            preferred_time: state.time,
+            message:        state.notes
+          })
+        });
         var data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Something went wrong.');
         okEl.textContent = '✓ ' + data.message;
         okEl.hidden = false;
-        bookingForm.reset();
-        dateInput.min = new Date().toISOString().slice(0, 10);
-        btn.textContent = 'Request Sent ✓';
+        submitBtn.hidden = true;
+        backBtn.hidden   = true;
       } catch (err) {
         errEl.textContent = err.message;
         errEl.hidden = false;
-        btn.textContent = 'Request Appointment →';
-        btn.disabled    = false;
+        submitBtn.textContent = 'Confirm Booking →';
+        submitBtn.disabled = false;
       }
     });
-  }
+
+    /* ---- Load services into step 1 ---- */
+    async function loadWizardServices() {
+      var el = document.getElementById('bw-services-list');
+      if (!el) return;
+      try {
+        var res  = await fetch('/api/services');
+        if (!res.ok) throw new Error();
+        var data = await res.json();
+        var cats = {};
+        data.forEach(function (s) { if (!cats[s.category]) cats[s.category] = []; cats[s.category].push(s); });
+        el.innerHTML = Object.entries(cats).map(function (entry) {
+          var cat = entry[0], services = entry[1];
+          return '<p class="bw-service-category">' + cat + '</p>' +
+            services.map(function (s) {
+              var price = s.price_is_from ? 'from $' + s.price : (s.price === 'Varies' ? 'Varies' : '$' + s.price);
+              return '<button type="button" class="bw-service-btn" data-value="' + s.name + '" data-label="' + s.name + '">' +
+                '<span class="bw-service-btn__name">' + s.name + '</span>' +
+                '<span class="bw-service-btn__meta">' + s.duration + ' · ' + price + '</span>' +
+                '</button>';
+            }).join('');
+        }).join('');
+        el.querySelectorAll('.bw-service-btn').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            el.querySelectorAll('.bw-service-btn').forEach(function (b) { b.classList.remove('selected'); });
+            this.classList.add('selected');
+            state.service = this.dataset.value;
+            state.serviceLabel = this.dataset.label;
+          });
+        });
+        // Re-select if returning to step 1
+        if (state.service) {
+          var cur = el.querySelector('[data-value="' + state.service + '"]');
+          if (cur) cur.classList.add('selected');
+        }
+      } catch (_) {
+        el.innerHTML = '<p style="color:var(--gray-500);font-size:0.875rem;">Could not load services — please call us to book.</p>';
+      }
+    }
+
+    /* ---- Load stylists into step 2 ---- */
+    async function loadWizardStylists() {
+      var el = document.getElementById('bw-stylist-list');
+      if (!el) return;
+      try {
+        var res  = await fetch('/api/stylists');
+        if (!res.ok) return;
+        var data = await res.json();
+        data.forEach(function (s) {
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'bw-stylist-card';
+          btn.dataset.value = s.name;
+          btn.dataset.label = s.name + ' — ' + s.role;
+          var photo = s.photo_url
+            ? '<img src="' + s.photo_url + '" alt="' + s.name + '" class="bw-stylist-card__photo" />'
+            : '<span class="bw-stylist-card__photo bw-stylist-card__photo--placeholder" aria-hidden="true"></span>';
+          btn.innerHTML = photo +
+            '<span>' +
+              '<span class="bw-stylist-card__name">' + s.name + '</span>' +
+              '<span class="bw-stylist-card__role">' + s.role + '</span>' +
+            '</span>';
+          el.appendChild(btn);
+        });
+      } catch (_) {}
+      el.querySelectorAll('.bw-stylist-card').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          el.querySelectorAll('.bw-stylist-card').forEach(function (b) { b.classList.remove('selected'); });
+          this.classList.add('selected');
+          state.stylist = this.dataset.value || 'No preference';
+          state.stylistLabel = this.dataset.label || 'No preference';
+        });
+      });
+    }
+
+    loadWizardServices();
+    loadWizardStylists();
+  }());
 
 
   /* ====================================================

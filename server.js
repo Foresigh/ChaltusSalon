@@ -280,6 +280,22 @@ app.delete('/api/services/:id', auth, async (req, res) => {
 // ════════════════════════════════════════════════════════════════════════════════
 // BOOKINGS
 // ════════════════════════════════════════════════════════════════════════════════
+
+// GET /api/availability?date=YYYY-MM-DD — returns already-booked time slots for a date
+app.get('/api/availability', async (req, res) => {
+  const { date } = req.query;
+  if (!date) return res.status(400).json({ error: 'date is required' });
+  try {
+    const { rows } = await pool.query(
+      `SELECT preferred_time FROM bookings WHERE preferred_date = $1 AND status != 'cancelled'`,
+      [date]
+    );
+    res.json({ booked: rows.map(r => r.preferred_time) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/api/bookings', async (req, res) => {
   try {
     const { client_name, client_email = '', client_phone, service_name,
