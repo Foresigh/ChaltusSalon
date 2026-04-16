@@ -13,14 +13,13 @@ const multer     = require('multer');
 const cors       = require('cors');
 const cloudinary = require('cloudinary').v2;
 const { Resend } = require('resend');
+const twilio      = require('twilio');
 const { pool, initDB } = require('./db');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
 // ── Email setup (Resend) ─────────────────────────────────────────────────────
-// Set RESEND_API_KEY + SALON_NOTIFY_EMAIL in Railway env vars to enable.
-// Without them the booking still saves — emails are just skipped.
 const RESEND_KEY      = process.env.RESEND_API_KEY || '';
 const SALON_EMAIL     = process.env.SALON_NOTIFY_EMAIL || process.env.EMAIL_USER || '';
 const resend          = RESEND_KEY ? new Resend(RESEND_KEY) : null;
@@ -30,6 +29,28 @@ if (resend) {
   console.log('✔  Email configured via Resend — notifications → ', SALON_EMAIL);
 } else {
   console.warn('⚠  RESEND_API_KEY not set — email notifications are disabled');
+}
+
+// ── SMS setup (Twilio) ───────────────────────────────────────────────────────
+const TWILIO_SID   = process.env.TWILIO_ACCOUNT_SID || '';
+const TWILIO_TOKEN = process.env.TWILIO_AUTH_TOKEN  || '';
+const TWILIO_FROM  = process.env.TWILIO_FROM        || '';
+const sms          = TWILIO_SID ? twilio(TWILIO_SID, TWILIO_TOKEN) : null;
+
+if (sms) {
+  console.log('✔  SMS configured via Twilio — from', TWILIO_FROM);
+} else {
+  console.warn('⚠  TWILIO_ACCOUNT_SID not set — SMS notifications are disabled');
+}
+
+async function sendSMS(to, body) {
+  if (!sms || !TWILIO_FROM || !to) return;
+  // Normalize phone — strip non-digits and add +1 if needed
+  const digits = to.replace(/\D/g, '');
+  const e164   = digits.startsWith('1') ? '+' + digits : '+1' + digits;
+  sms.messages.create({ from: TWILIO_FROM, to: e164, body })
+    .then(m => console.log('✔  SMS sent to', e164, '—', m.sid))
+    .catch(e => console.error('✗  SMS failed:', e.message));
 }
 
 // ── Shared email template ────────────────────────────────────────────────────
@@ -170,7 +191,12 @@ async function sendBookingEmails(booking) {
     `
   }).then(() => console.log('✔  Salon notification sent')).catch(e => console.error('✗  Salon email failed:', e.message));
 
-  // ── Customer receipt ─────────────────────────────────────────────────────
+  // ── Customer SMS ─────────────────────────────────────────────────────────
+  sendSMS(client_phone,
+    `Hi ${client_name}, we received your booking request at Chaltus Salon for ${service_name} on ${dateLabel} at ${preferred_time}. We'll confirm within 24 hours. Questions? Call (801) 376-3976.`
+  );
+
+  // ── Customer email receipt ────────────────────────────────────────────────
   if (!client_email) return;
   const html = await buildEmailHTML({ type: 'pending', booking, stylistRow, serviceRow });
   resend.emails.send({
@@ -565,6 +591,17 @@ app.patch('/api/bookings/:id', auth, async (req, res) => {
           html
         }).then(() => console.log(`✔  ${req.body.status} email sent to`, b.client_email))
           .catch(e => console.error(`✗  Status email failed:`, e.message));
+
+        // SMS
+        if (req.body.status === 'confirmed') {
+          sendSMS(b.client_phone,
+            `Hi ${b.client_name}, your appointment at Chaltus Salon is CONFIRMED! ${b.service_name} on ${dateLabel} at ${b.preferred_time}. See you soon! Questions? Call (801) 376-3976.`
+          );
+        } else {
+          sendSMS(b.client_phone,
+            `Hi ${b.client_name}, your appointment at Chaltus Salon on ${dateLabel} at ${b.preferred_time} has been cancelled. To rebook call (801) 376-3976 or visit chaltusalon.com.`
+          );
+        }
       }
     }
 
