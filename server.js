@@ -351,37 +351,50 @@ app.delete('/api/services/:id', auth, async (req, res) => {
 
 // GET /api/availability?date=YYYY-MM-DD&stylist=Name
 // - Specific stylist: returns that stylist's booked slots
-// - No preference / omitted: returns slots where every stylist is booked
+// - No preference / omitted: returns slots where EVERY stylist is booked
 app.get('/api/availability', async (req, res) => {
   const { date, stylist } = req.query;
   if (!date) return res.status(400).json({ error: 'date is required' });
   try {
-    if (stylist && stylist !== 'No preference') {
-      // Show only this stylist's booked times
+    if (stylist && stylist !== 'Any stylist') {
+      // Block slots booked by this specific stylist
       const { rows } = await pool.query(
         `SELECT preferred_time FROM bookings
-         WHERE preferred_date = $1 AND stylist_name = $2 AND status != 'cancelled'`,
+         WHERE preferred_date = $1 AND stylist_name = $2
+           AND status IS DISTINCT FROM 'cancelled'`,
         [date, stylist]
       );
       return res.json({ booked: rows.map(r => r.preferred_time) });
     }
 
-    // No preference: block a slot only if ALL stylists are booked at that time
-    const { rows: stylistRows } = await pool.query(`SELECT COUNT(*) AS total FROM stylists`);
-    const total = parseInt(stylistRows[0].total, 10);
+    // No preference: block a slot only when every stylist is taken
+    // Fetch all stylist names and all bookings for this date in parallel
+    const [stylistRes, bookingRes] = await Promise.all([
+      pool.query(`SELECT name FROM stylists WHERE active = 1`),
+      pool.query(
+        `SELECT preferred_time, stylist_name FROM bookings
+         WHERE preferred_date = $1 AND status IS DISTINCT FROM 'cancelled'
+           AND stylist_name != 'Any stylist'`,
+        [date]
+      )
+    ]);
 
-    if (total === 0) return res.json({ booked: [] });
+    const allStylists = stylistRes.rows.map(r => r.name);
+    if (allStylists.length === 0) return res.json({ booked: [] });
 
-    const { rows } = await pool.query(
-      `SELECT preferred_time
-       FROM bookings
-       WHERE preferred_date = $1 AND status != 'cancelled'
-         AND stylist_name != 'No preference'
-       GROUP BY preferred_time
-       HAVING COUNT(DISTINCT stylist_name) >= $2`,
-      [date, total]
-    );
-    res.json({ booked: rows.map(r => r.preferred_time) });
+    // Build a map: time -> Set of booked stylist names
+    const bookedMap = {};
+    bookingRes.rows.forEach(({ preferred_time, stylist_name }) => {
+      if (!bookedMap[preferred_time]) bookedMap[preferred_time] = new Set();
+      bookedMap[preferred_time].add(stylist_name);
+    });
+
+    // A slot is fully blocked only when every stylist has a booking at that time
+    const fullyBooked = Object.entries(bookedMap)
+      .filter(([, names]) => allStylists.every(s => names.has(s)))
+      .map(([time]) => time);
+
+    res.json({ booked: fullyBooked });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -390,7 +403,7 @@ app.get('/api/availability', async (req, res) => {
 app.post('/api/bookings', async (req, res) => {
   try {
     const { client_name, client_email = '', client_phone, service_name,
-            stylist_name = 'No preference', preferred_date, preferred_time, message = '' } = req.body;
+            stylist_name = 'Any stylist', preferred_date, preferred_time, message = '' } = req.body;
     if (!client_name || !client_phone || !service_name || !preferred_date || !preferred_time)
       return res.status(400).json({ error: 'Please fill in all required fields.' });
     const { rows } = await pool.query(

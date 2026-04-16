@@ -64,7 +64,7 @@ async function initDB() {
       client_email   TEXT DEFAULT '',
       client_phone   TEXT NOT NULL,
       service_name   TEXT NOT NULL,
-      stylist_name   TEXT DEFAULT 'No preference',
+      stylist_name   TEXT DEFAULT 'Any stylist',
       preferred_date TEXT NOT NULL,
       preferred_time TEXT NOT NULL,
       message        TEXT DEFAULT '',

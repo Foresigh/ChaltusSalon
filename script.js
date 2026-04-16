@@ -396,7 +396,7 @@
     async function loadSlots(date) {
       var el = document.getElementById('cal-times');
       el.innerHTML = '<p class="cal-times__hint">Loading…</p>';
-      var stylist = (document.getElementById('b-stylist') || {}).value || 'No preference';
+      var stylist = (document.getElementById('b-stylist') || {}).value || 'Any stylist';
       var booked = [];
       try {
         var r = await fetch('/api/availability?date=' + encodeURIComponent(date) +
@@ -454,10 +454,10 @@
       var rowsEl  = document.getElementById('bk-summary-rows');
       if (!rowsEl) return;
       var service = document.getElementById('b-service').value;
-      var stylist = (document.getElementById('b-stylist').value || 'No preference');
+      var stylist = (document.getElementById('b-stylist').value || 'Any stylist');
       var rows = [];
       if (service) rows.push(['Service', service]);
-      if (stylist !== 'No preference') rows.push(['Stylist', stylist]);
+      if (stylist !== 'Any stylist') rows.push(['Stylist', stylist]);
       if (state.date) {
         var p = state.date.split('-');
         rows.push(['Date', new Date(+p[0], +p[1]-1, +p[2]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })]);
@@ -502,7 +502,7 @@
             client_phone:   phone,
             client_email:   (document.getElementById('b-email').value   || '').trim(),
             service_name:   service,
-            stylist_name:   document.getElementById('b-stylist').value  || 'No preference',
+            stylist_name:   document.getElementById('b-stylist').value  || 'Any stylist',
             preferred_date: state.date,
             preferred_time: state.time,
             message:        (document.getElementById('b-message').value || '').trim()
@@ -597,7 +597,7 @@
       /* ---- build list items ---- */
       function addItem(value, avatarHtml, name, sub) {
         var li = document.createElement('li');
-        li.className = 'stylist-dd__item' + (value === 'No preference' ? ' active' : '');
+        li.className = 'stylist-dd__item' + (value === 'Any stylist' ? ' active' : '');
         li.role = 'option';
         li.dataset.value = value;
         li.innerHTML = avatarHtml +
@@ -613,7 +613,7 @@
       }
 
       var anyAvatar = '<span class="stylist-dd__avatar stylist-dd__avatar--any" aria-hidden="true">?</span>';
-      addItem('No preference', anyAvatar, 'No preference', 'Any available stylist');
+      addItem('Any stylist', anyAvatar, 'Any stylist', 'First available stylist');
 
       try {
         var res  = await fetch('/api/stylists');
