@@ -373,6 +373,15 @@
 
     renderCalendar();
 
+    /* ---- Parse a slot string to minutes since midnight ---- */
+    function slotToMinutes(slot) {
+      var m = slot.match(/(\d+):(\d+) (AM|PM)/);
+      var h = parseInt(m[1]), min = parseInt(m[2]), mer = m[3];
+      if (mer === 'PM' && h !== 12) h += 12;
+      if (mer === 'AM' && h === 12) h = 0;
+      return h * 60 + min;
+    }
+
     /* ---- Time slots ---- */
     async function loadSlots(date) {
       var el = document.getElementById('cal-times');
@@ -383,25 +392,34 @@
         if (r.ok) booked = (await r.json()).booked || [];
       } catch (_) {}
 
+      // For today: disable slots that are already past (+ 30 min buffer)
+      var todayStr = new Date().toISOString().slice(0, 10);
+      var nowMinutes = -1;
+      if (date === todayStr) {
+        var now = new Date();
+        nowMinutes = now.getHours() * 60 + now.getMinutes() + 30; // 30-min booking buffer
+      }
+
       var p = date.split('-');
       var label = new Date(+p[0], +p[1] - 1, +p[2]).toLocaleDateString('en-US',
         { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
       var html = '<p class="cal-times__selected-date">' + label + '</p>';
       SLOT_GROUPS.forEach(function (group) {
-        var available = group.slots.filter(function (s) { return booked.indexOf(s) === -1; });
         html += '<div class="time-group"><p class="time-group__label">' + group.label + '</p>';
-        if (available.length === 0) {
-          html += '<p class="time-group__empty">No availability</p>';
-        } else {
-          html += '<div class="time-group__slots">' +
-            group.slots.map(function (slot) {
-              var taken    = booked.indexOf(slot) !== -1;
-              var selected = slot === state.time;
-              return '<button type="button" class="time-slot' + (selected ? ' selected' : '') + '"' +
-                (taken ? ' disabled' : '') + ' data-slot="' + slot + '">' + slot + '</button>';
-            }).join('') + '</div>';
-        }
+        var anyAvailable = false;
+        var slotsHtml = '<div class="time-group__slots">';
+        group.slots.forEach(function (slot) {
+          var taken   = booked.indexOf(slot) !== -1;
+          var isPast  = nowMinutes > 0 && slotToMinutes(slot) <= nowMinutes;
+          var disabled = taken || isPast;
+          var selected = slot === state.time;
+          if (!disabled) anyAvailable = true;
+          slotsHtml += '<button type="button" class="time-slot' + (selected && !disabled ? ' selected' : '') + '"' +
+            (disabled ? ' disabled' : '') + ' data-slot="' + slot + '">' + slot + '</button>';
+        });
+        slotsHtml += '</div>';
+        html += anyAvailable ? slotsHtml : '<p class="time-group__empty">No availability</p>';
         html += '</div>';
       });
       el.innerHTML = html;

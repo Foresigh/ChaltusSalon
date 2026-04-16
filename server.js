@@ -12,10 +12,78 @@ const jwt        = require('jsonwebtoken');
 const multer     = require('multer');
 const cors       = require('cors');
 const cloudinary = require('cloudinary').v2;
+const nodemailer = require('nodemailer');
 const { pool, initDB } = require('./db');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
+
+// ── Email setup ──────────────────────────────────────────────────────────────
+// Set EMAIL_USER + EMAIL_PASS (Gmail App Password) in Railway env vars to enable.
+// Without them the booking still saves — emails are just skipped.
+const SALON_EMAIL = process.env.EMAIL_USER || '';
+const mailer = SALON_EMAIL ? nodemailer.createTransport({
+  service: 'gmail',
+  auth: { user: SALON_EMAIL, pass: process.env.EMAIL_PASS || '' }
+}) : null;
+
+async function sendBookingEmails(booking) {
+  if (!mailer) return; // email not configured — silent skip
+  const { client_name, client_email, client_phone, service_name,
+          stylist_name, preferred_date, preferred_time, message, id } = booking;
+
+  const dateLabel = new Date(preferred_date + 'T12:00:00').toLocaleDateString('en-US',
+    { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  // ── Notify Chaltu ────────────────────────────────────────────────────────
+  mailer.sendMail({
+    from: `"Chaltus Salon" <${SALON_EMAIL}>`,
+    to: SALON_EMAIL,
+    subject: `New Booking Request #${id} — ${client_name}`,
+    html: `
+      <h2>New Booking Request</h2>
+      <table style="border-collapse:collapse;font-family:sans-serif;font-size:15px;">
+        <tr><td style="padding:6px 16px 6px 0;color:#666">Client</td><td><strong>${client_name}</strong></td></tr>
+        <tr><td style="padding:6px 16px 6px 0;color:#666">Phone</td><td>${client_phone}</td></tr>
+        <tr><td style="padding:6px 16px 6px 0;color:#666">Email</td><td>${client_email || '—'}</td></tr>
+        <tr><td style="padding:6px 16px 6px 0;color:#666">Service</td><td>${service_name}</td></tr>
+        <tr><td style="padding:6px 16px 6px 0;color:#666">Stylist</td><td>${stylist_name}</td></tr>
+        <tr><td style="padding:6px 16px 6px 0;color:#666">Date</td><td>${dateLabel}</td></tr>
+        <tr><td style="padding:6px 16px 6px 0;color:#666">Time</td><td>${preferred_time}</td></tr>
+        ${message ? `<tr><td style="padding:6px 16px 6px 0;color:#666">Notes</td><td>${message}</td></tr>` : ''}
+      </table>
+      <p style="margin-top:16px;font-size:13px;color:#888">Booking ID: #${id} · Reply to this email or call the client to confirm.</p>
+    `
+  }).catch(e => console.warn('Salon email failed:', e.message));
+
+  // ── Confirm to customer (only if they provided an email) ─────────────────
+  if (!client_email) return;
+  mailer.sendMail({
+    from: `"Chaltus Salon" <${SALON_EMAIL}>`,
+    to: client_email,
+    subject: `Your appointment request at Chaltus Salon — ${dateLabel}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#111">
+        <h2 style="margin-bottom:4px">We received your request!</h2>
+        <p style="color:#555;margin-top:0">We'll call or text you within 24 hours to confirm.</p>
+        <hr style="border:none;border-top:1px solid #eee;margin:20px 0">
+        <table style="border-collapse:collapse;font-size:15px;width:100%">
+          <tr><td style="padding:6px 0;color:#888;width:110px">Service</td><td><strong>${service_name}</strong></td></tr>
+          <tr><td style="padding:6px 0;color:#888">Stylist</td><td>${stylist_name}</td></tr>
+          <tr><td style="padding:6px 0;color:#888">Date</td><td>${dateLabel}</td></tr>
+          <tr><td style="padding:6px 0;color:#888">Time</td><td>${preferred_time}</td></tr>
+        </table>
+        <hr style="border:none;border-top:1px solid #eee;margin:20px 0">
+        <p style="font-size:14px;color:#555">
+          <strong>Chaltus Salon</strong><br>
+          1524 S State St, Salt Lake City, UT 84115<br>
+          <a href="tel:+18013763976" style="color:#111">(801) 376-3976</a>
+        </p>
+        <p style="font-size:12px;color:#aaa">Need to change your request? Call or text us at (801) 376-3976.</p>
+      </div>
+    `
+  }).catch(e => console.warn('Customer email failed:', e.message));
+}
 const JWT_SECRET    = process.env.JWT_SECRET || 'chaltus-salon-2024-change-in-prod';
 const USE_CLOUDINARY = !!process.env.CLOUDINARY_URL;
 
@@ -304,10 +372,13 @@ app.post('/api/bookings', async (req, res) => {
       return res.status(400).json({ error: 'Please fill in all required fields.' });
     const { rows } = await pool.query(
       `INSERT INTO bookings (client_name,client_email,client_phone,service_name,stylist_name,preferred_date,preferred_time,message)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
       [client_name, client_email, client_phone, service_name, stylist_name, preferred_date, preferred_time, message]
     );
-    res.json({ id: rows[0].id, message: "Booking request received! We'll confirm within 24 hours." });
+    const booking = rows[0];
+    // Fire-and-forget — don't block the response on email delivery
+    sendBookingEmails(booking);
+    res.json({ id: booking.id, message: "Booking request received! We'll confirm within 24 hours." });
   } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 
