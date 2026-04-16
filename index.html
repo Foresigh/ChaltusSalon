@@ -94,7 +94,7 @@
        ================================================================ -->
   <div class="sticky-book" id="sticky-book" role="complementary" aria-label="Book appointment">
     <p><strong>Chaltus Salon</strong> — Open Tue–Sat, 10am–6pm</p>
-    <a href="https://square.site/book/YD735KXQ7K84K/chaltu-s-salon-salt-lake-city-ut" target="_blank" rel="noopener" class="btn btn-white">Book Now →</a>
+    <a href="#booking" class="btn btn-white">Book Now →</a>
   </div>
 
   <!-- ================================================================
@@ -723,7 +723,7 @@
         </div>
 
         <div class="reviews-cta fade-up">
-          <a href="https://square.site/book/YD735KXQ7K84K/chaltu-s-salon-salt-lake-city-ut" target="_blank" rel="noopener" class="btn btn-white btn-lg">Book Your Appointment</a>
+          <a href="#booking" class="btn btn-white btn-lg">Book Your Appointment</a>
         </div>
 
       </div>
@@ -796,152 +796,110 @@
          9. FINAL CTA SECTION
          CRO: Scarcity + urgency + single dominant action
          ================================================================ -->
-    <section id="booking" class="final-cta" aria-labelledby="cta-heading">
-      <div class="booking-layout container">
+    <section id="booking" class="booking-section" aria-labelledby="cta-heading">
+      <div class="container">
 
-        <!-- LEFT: Booking wizard -->
-        <div class="booking-form-wrap fade-up">
-          <div class="scarcity-badge" style="margin-bottom:1.5rem;">
-            <span class="scarcity-dot" aria-hidden="true"></span>
-            Limited Appointments This Week
-          </div>
-          <h2 id="cta-heading" style="color:var(--white);margin-bottom:0.5rem;">Request an Appointment</h2>
-          <p style="color:var(--gray-400);margin-bottom:1.75rem;font-size:0.95rem;">Just a few steps — we'll confirm within 24 hours.</p>
-
-          <!-- Step progress -->
-          <div class="bw-progress" aria-label="Booking steps">
-            <div class="bw-progress__step active" data-step="1">
-              <span class="bw-progress__num">1</span>
-              <span class="bw-progress__label">Service</span>
-            </div>
-            <div class="bw-progress__line"></div>
-            <div class="bw-progress__step" data-step="2">
-              <span class="bw-progress__num">2</span>
-              <span class="bw-progress__label">Stylist</span>
-            </div>
-            <div class="bw-progress__line"></div>
-            <div class="bw-progress__step" data-step="3">
-              <span class="bw-progress__num">3</span>
-              <span class="bw-progress__label">Date &amp; Time</span>
-            </div>
-            <div class="bw-progress__line"></div>
-            <div class="bw-progress__step" data-step="4">
-              <span class="bw-progress__num">4</span>
-              <span class="bw-progress__label">Your Info</span>
-            </div>
-            <div class="bw-progress__line"></div>
-            <div class="bw-progress__step" data-step="5">
-              <span class="bw-progress__num">5</span>
-              <span class="bw-progress__label">Confirm</span>
-            </div>
-          </div>
-
-          <!-- Step 1: Service -->
-          <div class="bw-panel" id="bw-panel-1">
-            <p class="bw-panel__label">What service are you looking for?</p>
-            <div id="bw-services-list" class="bw-services-list">
-              <p style="color:var(--gray-500);font-size:0.875rem;">Loading services…</p>
-            </div>
-          </div>
-
-          <!-- Step 2: Stylist -->
-          <div class="bw-panel" id="bw-panel-2" hidden>
-            <p class="bw-panel__label">Choose your stylist</p>
-            <div id="bw-stylist-list" class="bw-stylist-list">
-              <button type="button" class="bw-stylist-card selected" data-value="No preference" data-label="No preference">
-                <span class="bw-stylist-card__photo bw-stylist-card__photo--placeholder" aria-hidden="true"></span>
-                <span>
-                  <span class="bw-stylist-card__name">No Preference</span>
-                  <span class="bw-stylist-card__role">Any available stylist</span>
-                </span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Step 3: Date & Time -->
-          <div class="bw-panel" id="bw-panel-3" hidden>
-            <p class="bw-panel__label">Pick a date and time</p>
-            <div class="bw-date-row">
-              <div class="bf-field">
-                <label for="b-date">Date <span style="color:var(--gray-500);font-weight:400;">(Tue – Sat only)</span></label>
-                <input type="date" id="b-date" />
-              </div>
-            </div>
-            <div id="bw-slots" class="bw-slots">
-              <p class="bw-slots__hint">Select a date above to see available times.</p>
-            </div>
-          </div>
-
-          <!-- Step 4: Your Info -->
-          <div class="bw-panel" id="bw-panel-4" hidden>
-            <p class="bw-panel__label">Tell us about you</p>
-            <div class="bf-grid">
-              <div class="bf-field">
-                <label for="b-name">Full Name *</label>
-                <input type="text" id="b-name" placeholder="Your name" autocomplete="name" />
-              </div>
-              <div class="bf-field">
-                <label for="b-phone">Phone Number *</label>
-                <input type="tel" id="b-phone" placeholder="(801) 000-0000" autocomplete="tel" />
-              </div>
-              <div class="bf-field bf-field--full">
-                <label for="b-email">Email Address</label>
-                <input type="email" id="b-email" placeholder="you@example.com" autocomplete="email" />
-              </div>
-              <div class="bf-field bf-field--full">
-                <label for="b-message">Notes (optional)</label>
-                <textarea id="b-message" rows="2" placeholder="Hair length, allergies, special requests…"></textarea>
-              </div>
-            </div>
-          </div>
-
-          <!-- Step 5: Confirm -->
-          <div class="bw-panel" id="bw-panel-5" hidden>
-            <p class="bw-panel__label">Review your request</p>
-            <div id="bw-summary" class="bw-summary"></div>
-            <p class="bw-confirm-note">We'll confirm within 24 hours · No credit card needed</p>
-          </div>
-
-          <!-- Nav -->
-          <div class="bw-nav">
-            <button type="button" class="btn btn-outline-light" id="bw-back" hidden>← Back</button>
-            <button type="button" class="btn btn-white" id="bw-next">Next →</button>
-            <button type="button" class="btn btn-white" id="bw-submit" hidden>Confirm Booking →</button>
-          </div>
-
-          <div id="booking-error"   class="bf-alert bf-alert--error"   hidden></div>
-          <div id="booking-success" class="bf-alert bf-alert--success" hidden></div>
+        <div class="bk-header fade-up">
+          <h2 id="cta-heading">Book Your Appointment</h2>
+          <p>We'll confirm within 24 hours · No credit card needed</p>
         </div>
 
-        <!-- RIGHT: Alternative + info -->
-        <div class="booking-info fade-up delay-1">
-          <div class="booking-info__block">
-            <span class="eyebrow" style="color:var(--gray-500);">Book Instantly</span>
-            <p style="color:var(--gray-300);margin:0.5rem 0 1rem;">Prefer to book right now without waiting? Use our Square booking page.</p>
-            <a href="https://square.site/book/YD735KXQ7K84K/chaltu-s-salon-salt-lake-city-ut"
-               target="_blank" rel="noopener" class="btn btn-white btn-lg" style="width:100%;justify-content:center;">
-              Book on Square
-            </a>
+        <div class="bk-body">
+
+          <!-- LEFT: Form -->
+          <div class="bk-main fade-up">
+
+            <!-- Service + Stylist -->
+            <div class="bk-selects">
+              <div class="bk-field">
+                <label for="b-service">Service</label>
+                <select id="b-service">
+                  <option value="">Select a service…</option>
+                </select>
+              </div>
+              <div class="bk-field">
+                <label for="b-stylist">Stylist</label>
+                <select id="b-stylist">
+                  <option value="No preference">No preference</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Week calendar -->
+            <div class="cal-wrap">
+              <div class="cal-nav">
+                <span id="cal-month" class="cal-month"></span>
+                <div class="cal-nav__btns">
+                  <button type="button" id="cal-prev" aria-label="Previous week">←</button>
+                  <button type="button" id="cal-next" aria-label="Next week">→</button>
+                </div>
+              </div>
+              <div id="cal-week" class="cal-week" role="group" aria-label="Select a date"></div>
+            </div>
+
+            <!-- Time slots -->
+            <div id="cal-times" class="cal-times">
+              <p class="cal-times__hint">Select a date above to see available times.</p>
+            </div>
+
+            <!-- Personal info -->
+            <div class="bk-fields">
+              <div class="bk-grid">
+                <div class="bk-field">
+                  <label for="b-name">Full Name *</label>
+                  <input type="text" id="b-name" placeholder="Your name" autocomplete="name" />
+                </div>
+                <div class="bk-field">
+                  <label for="b-phone">Phone *</label>
+                  <input type="tel" id="b-phone" placeholder="(801) 000-0000" autocomplete="tel" />
+                </div>
+                <div class="bk-field bk-field--full">
+                  <label for="b-email">Email</label>
+                  <input type="email" id="b-email" placeholder="you@example.com" autocomplete="email" />
+                </div>
+                <div class="bk-field bk-field--full">
+                  <label for="b-message">Notes (optional)</label>
+                  <textarea id="b-message" rows="2" placeholder="Hair length, allergies, special requests…"></textarea>
+                </div>
+              </div>
+
+              <div id="booking-error"   class="bk-alert bk-alert--error"   hidden></div>
+              <div id="booking-success" class="bk-alert bk-alert--success" hidden></div>
+
+              <button type="button" id="booking-submit" class="bk-submit-btn">
+                Request Appointment →
+              </button>
+              <p class="bk-note">We'll confirm via phone or email · No credit card needed</p>
+            </div>
+
           </div>
-          <div class="booking-info__block">
-            <span class="eyebrow" style="color:var(--gray-500);">Call or Text</span>
-            <a href="tel:+18013763976" class="booking-info__phone">(801) 376-3976</a>
-          </div>
-          <div class="booking-info__block">
-            <span class="eyebrow" style="color:var(--gray-500);">Hours</span>
-            <p style="color:var(--gray-400);line-height:1.8;">
-              Tuesday – Saturday<br>
-              <strong style="color:var(--white);">10:00 AM – 6:00 PM</strong><br>
-              <span style="font-size:0.85rem;">Sunday &amp; Monday — Closed</span>
-            </p>
-          </div>
-          <div class="booking-info__block">
-            <span class="eyebrow" style="color:var(--gray-500);">Location</span>
-            <p style="color:var(--gray-400);">1524 S State St<br>Salt Lake City, UT 84115</p>
-            <a href="https://share.google/Sm2qCDQpZWe0EtSCe" target="_blank" rel="noopener"
-               style="color:var(--gray-300);font-size:0.85rem;text-decoration:underline;margin-top:0.5rem;display:inline-block;">
-              Get Directions →
-            </a>
+
+          <!-- RIGHT: Summary + contact -->
+          <div class="bk-side fade-up delay-1">
+
+            <div class="bk-summary" id="bk-summary">
+              <h3 class="bk-summary__title">Appointment Summary</h3>
+              <div id="bk-summary-rows" class="bk-summary__rows">
+                <p class="bk-summary__empty">Your selections will appear here.</p>
+              </div>
+            </div>
+
+            <div class="bk-contact">
+              <div class="bk-contact__block">
+                <span class="bk-contact__label">Call or Text</span>
+                <a href="tel:+18013763976" class="bk-contact__phone">(801) 376-3976</a>
+              </div>
+              <div class="bk-contact__block">
+                <span class="bk-contact__label">Hours</span>
+                <p>Tuesday – Saturday<br><strong>10:00 AM – 6:00 PM</strong><br><small>Sunday &amp; Monday — Closed</small></p>
+              </div>
+              <div class="bk-contact__block">
+                <span class="bk-contact__label">Location</span>
+                <p>1524 S State St<br>Salt Lake City, UT 84115</p>
+                <a href="https://share.google/Sm2qCDQpZWe0EtSCe" target="_blank" rel="noopener" class="bk-contact__dir">Get Directions →</a>
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -994,7 +952,7 @@
         <ul>
           <li><a href="tel:+18013763976">(801) 376-3976</a></li>
           <li><a href="mailto:info@chaltussalon.com">info@chaltussalon.com</a></li>
-          <li><a href="https://square.site/book/YD735KXQ7K84K/chaltu-s-salon-salt-lake-city-ut" target="_blank" rel="noopener">Book Online</a></li>
+          <li><a href="#booking">Book Online</a></li>
         </ul>
       </div>
 

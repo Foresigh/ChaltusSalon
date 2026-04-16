@@ -281,277 +281,262 @@
   }
 
   /* ====================================================
-     8. BOOKING WIZARD
-     Steps: Service → Stylist → Date/Time → Info → Confirm
+     8. BOOKING — calendar week view + grouped time slots
+     Single screen, no steps.
      ==================================================== */
   (function () {
-    var nextBtn   = document.getElementById('bw-next');
-    if (!nextBtn) return; // wizard not present
+    var submitBtn = document.getElementById('booking-submit');
+    if (!submitBtn) return;
 
-    var backBtn   = document.getElementById('bw-back');
-    var submitBtn = document.getElementById('bw-submit');
-    var errEl     = document.getElementById('booking-error');
-    var okEl      = document.getElementById('booking-success');
-    var steps     = document.querySelectorAll('.bw-progress__step');
+    var errEl = document.getElementById('booking-error');
+    var okEl  = document.getElementById('booking-success');
 
-    var state = {
-      step: 1,
-      service: '', serviceLabel: '',
-      stylist: 'No preference', stylistLabel: 'No preference',
-      date: '', time: '',
-      name: '', phone: '', email: '', notes: ''
-    };
+    var state = { date: '', time: '' };
 
-    var ALL_SLOTS = [
-      '10:00 AM','10:30 AM','11:00 AM','11:30 AM',
-      '12:00 PM','12:30 PM','1:00 PM','1:30 PM',
-      '2:00 PM','2:30 PM','3:00 PM','3:30 PM',
-      '4:00 PM','4:30 PM','5:00 PM','5:30 PM'
+    var SLOT_GROUPS = [
+      { label: 'Morning',   slots: ['10:00 AM','10:30 AM','11:00 AM','11:30 AM'] },
+      { label: 'Afternoon', slots: ['12:00 PM','12:30 PM','1:00 PM','1:30 PM','2:00 PM','2:30 PM','3:00 PM','3:30 PM'] },
+      { label: 'Evening',   slots: ['4:00 PM','4:30 PM','5:00 PM','5:30 PM'] }
     ];
 
-    function panel(n) { return document.getElementById('bw-panel-' + n); }
+    /* ---- Calendar ---- */
+    var calWeekStart = getWeekStart(new Date());
 
-    function goToStep(n) {
-      panel(state.step).hidden = true;
-      panel(n).hidden = false;
-      state.step = n;
-      steps.forEach(function (s) {
-        var sn = parseInt(s.dataset.step, 10);
-        s.classList.toggle('done',   sn < n);
-        s.classList.toggle('active', sn === n);
-        s.classList.remove(sn > n ? 'done' : '');
-        if (sn > n) { s.classList.remove('done'); s.classList.remove('active'); }
-      });
-      backBtn.hidden   = (n === 1);
-      nextBtn.hidden   = (n === 5);
-      submitBtn.hidden = (n !== 5);
-      errEl.hidden = true;
-      if (n === 3) initDateStep();
-      if (n === 5) buildSummary();
+    function getWeekStart(d) {
+      var date = new Date(d);
+      date.setDate(date.getDate() - date.getDay()); // back to Sunday
+      date.setHours(0, 0, 0, 0);
+      return date;
     }
 
-    /* ---- Step 3: date / time ---- */
-    function initDateStep() {
-      var d = document.getElementById('b-date');
-      if (!d) return;
-      d.min = new Date().toISOString().slice(0, 10);
-      // Only attach once
-      if (!d._wizardReady) {
-        d._wizardReady = true;
-        d.addEventListener('change', function () {
-          var val = this.value;
-          if (!val) return;
-          var day = new Date(val + 'T12:00:00').getDay();
-          if (day === 0 || day === 1) {
-            document.getElementById('bw-slots').innerHTML =
-              '<p class="bw-slots__hint">We\'re closed Sunday &amp; Monday — please pick Tue–Sat.</p>';
-            state.date = ''; state.time = '';
-            return;
-          }
-          state.date = val; state.time = '';
-          loadSlots(val);
-        });
+    function renderCalendar() {
+      var monthEl = document.getElementById('cal-month');
+      var weekEl  = document.getElementById('cal-week');
+      if (!monthEl || !weekEl) return;
+
+      // Show month label based on Wednesday of the week
+      var mid = new Date(calWeekStart);
+      mid.setDate(mid.getDate() + 3);
+      monthEl.textContent = mid.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+      var today = new Date(); today.setHours(0, 0, 0, 0);
+      var selectedMs = state.date ? new Date(state.date + 'T00:00:00').getTime() : -1;
+
+      weekEl.innerHTML = '';
+      for (var i = 0; i < 7; i++) {
+        var day = new Date(calWeekStart);
+        day.setDate(day.getDate() + i);
+
+        var dow    = day.getDay(); // 0=Sun,1=Mon
+        var isPast = day < today;
+        var isClosed = dow === 0 || dow === 1;
+        var isSelected = day.getTime() === selectedMs;
+        var isToday    = day.getTime() === today.getTime();
+
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'cal-day';
+        if (isPast)     btn.classList.add('cal-day--past');
+        if (isClosed)   btn.classList.add('cal-day--closed');
+        if (isSelected) btn.classList.add('cal-day--selected');
+        if (isToday)    btn.classList.add('cal-day--today');
+        if (isPast || isClosed) btn.disabled = true;
+
+        btn.innerHTML =
+          '<span class="cal-day__name">' + day.toLocaleDateString('en-US', { weekday: 'short' }) + '</span>' +
+          '<span class="cal-day__num">'  + day.getDate() + '</span>';
+
+        if (!isPast && !isClosed) {
+          var ds = day.toISOString().slice(0, 10);
+          btn.dataset.date = ds;
+          btn.addEventListener('click', function () {
+            weekEl.querySelectorAll('.cal-day').forEach(function (b) { b.classList.remove('cal-day--selected'); });
+            this.classList.add('cal-day--selected');
+            state.date = this.dataset.date;
+            state.time = '';
+            updateSummary();
+            loadSlots(state.date);
+          });
+        }
+        weekEl.appendChild(btn);
       }
     }
 
+    document.getElementById('cal-prev') && document.getElementById('cal-prev').addEventListener('click', function () {
+      calWeekStart.setDate(calWeekStart.getDate() - 7);
+      renderCalendar();
+    });
+    document.getElementById('cal-next') && document.getElementById('cal-next').addEventListener('click', function () {
+      calWeekStart.setDate(calWeekStart.getDate() + 7);
+      renderCalendar();
+    });
+
+    renderCalendar();
+
+    /* ---- Time slots ---- */
     async function loadSlots(date) {
-      var el = document.getElementById('bw-slots');
-      el.innerHTML = '<p class="bw-slots__hint">Loading…</p>';
+      var el = document.getElementById('cal-times');
+      el.innerHTML = '<p class="cal-times__hint">Loading…</p>';
       var booked = [];
       try {
         var r = await fetch('/api/availability?date=' + date);
         if (r.ok) booked = (await r.json()).booked || [];
       } catch (_) {}
-      el.innerHTML = '<div class="bw-slots__grid">' +
-        ALL_SLOTS.map(function (slot) {
-          var taken    = booked.indexOf(slot) !== -1;
-          var selected = slot === state.time;
-          return '<button type="button" class="bw-slot' +
-            (taken ? '' : selected ? ' selected' : '') +
-            '" data-slot="' + slot + '"' +
-            (taken ? ' disabled aria-label="' + slot + ' — booked"' : '') +
-            '>' + slot + '</button>';
-        }).join('') + '</div>';
-      el.querySelectorAll('.bw-slot:not([disabled])').forEach(function (btn) {
+
+      var p = date.split('-');
+      var label = new Date(+p[0], +p[1] - 1, +p[2]).toLocaleDateString('en-US',
+        { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+      var html = '<p class="cal-times__selected-date">' + label + '</p>';
+      SLOT_GROUPS.forEach(function (group) {
+        var available = group.slots.filter(function (s) { return booked.indexOf(s) === -1; });
+        html += '<div class="time-group"><p class="time-group__label">' + group.label + '</p>';
+        if (available.length === 0) {
+          html += '<p class="time-group__empty">No availability</p>';
+        } else {
+          html += '<div class="time-group__slots">' +
+            group.slots.map(function (slot) {
+              var taken    = booked.indexOf(slot) !== -1;
+              var selected = slot === state.time;
+              return '<button type="button" class="time-slot' + (selected ? ' selected' : '') + '"' +
+                (taken ? ' disabled' : '') + ' data-slot="' + slot + '">' + slot + '</button>';
+            }).join('') + '</div>';
+        }
+        html += '</div>';
+      });
+      el.innerHTML = html;
+
+      el.querySelectorAll('.time-slot:not([disabled])').forEach(function (btn) {
         btn.addEventListener('click', function () {
-          el.querySelectorAll('.bw-slot').forEach(function (b) { b.classList.remove('selected'); });
+          el.querySelectorAll('.time-slot').forEach(function (b) { b.classList.remove('selected'); });
           this.classList.add('selected');
           state.time = this.dataset.slot;
+          updateSummary();
         });
       });
     }
 
-    /* ---- Step 5: summary ---- */
-    function buildSummary() {
-      var rows = [
-        ['Service',  state.serviceLabel],
-        ['Stylist',  state.stylistLabel],
-        ['Date',     formatDate(state.date)],
-        ['Time',     state.time],
-        ['Name',     state.name],
-        ['Phone',    state.phone]
-      ];
-      if (state.email) rows.push(['Email', state.email]);
-      if (state.notes) rows.push(['Notes', state.notes]);
-      document.getElementById('bw-summary').innerHTML = rows.map(function (r) {
-        return '<div class="bw-summary__row"><span class="bw-summary__key">' + r[0] +
-               '</span><span class="bw-summary__val">' + r[1] + '</span></div>';
-      }).join('');
-    }
-
-    function formatDate(s) {
-      if (!s) return '';
-      var p = s.split('-');
-      return new Date(+p[0], +p[1] - 1, +p[2]).toLocaleDateString('en-US',
-        { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    }
-
-    /* ---- Validation ---- */
-    function validate() {
-      if (state.step === 1 && !state.service)  { showErr('Please select a service.'); return false; }
-      if (state.step === 2 && !state.stylist)  { showErr('Please select a stylist.'); return false; }
-      if (state.step === 3) {
-        if (!state.date) { showErr('Please select a date.'); return false; }
-        if (!state.time) { showErr('Please select a time.'); return false; }
+    /* ---- Summary ---- */
+    function updateSummary() {
+      var rowsEl  = document.getElementById('bk-summary-rows');
+      if (!rowsEl) return;
+      var service = document.getElementById('b-service').value;
+      var stylist = (document.getElementById('b-stylist').value || 'No preference');
+      var rows = [];
+      if (service) rows.push(['Service', service]);
+      if (stylist !== 'No preference') rows.push(['Stylist', stylist]);
+      if (state.date) {
+        var p = state.date.split('-');
+        rows.push(['Date', new Date(+p[0], +p[1]-1, +p[2]).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })]);
       }
-      if (state.step === 4) {
-        var n = (document.getElementById('b-name').value  || '').trim();
-        var p = (document.getElementById('b-phone').value || '').trim();
-        if (!n) { showErr('Please enter your name.'); return false; }
-        if (!p) { showErr('Please enter your phone number.'); return false; }
-        state.name  = n;
-        state.phone = p;
-        state.email = (document.getElementById('b-email').value   || '').trim();
-        state.notes = (document.getElementById('b-message').value || '').trim();
+      if (state.time) rows.push(['Time', state.time]);
+      if (!rows.length) {
+        rowsEl.innerHTML = '<p class="bk-summary__empty">Your selections will appear here.</p>';
+      } else {
+        rowsEl.innerHTML = rows.map(function (r) {
+          return '<div class="bk-summary__row"><span class="bk-summary__key">' + r[0] +
+                 '</span><span class="bk-summary__val">' + r[1] + '</span></div>';
+        }).join('');
       }
-      return true;
     }
 
-    function showErr(msg) {
-      errEl.textContent = msg;
-      errEl.hidden = false;
-      setTimeout(function () { errEl.hidden = true; }, 4000);
-    }
-
-    /* ---- Nav buttons ---- */
-    nextBtn.addEventListener('click', function () {
-      if (validate()) goToStep(state.step + 1);
-    });
-    backBtn.addEventListener('click', function () {
-      errEl.hidden = true;
-      goToStep(state.step - 1);
+    // Update summary when dropdowns change
+    ['b-service','b-stylist'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('change', updateSummary);
     });
 
     /* ---- Submit ---- */
     submitBtn.addEventListener('click', async function () {
+      var service = document.getElementById('b-service').value;
+      var name    = (document.getElementById('b-name').value  || '').trim();
+      var phone   = (document.getElementById('b-phone').value || '').trim();
+      if (!service)     { showErr('Please select a service.');        return; }
+      if (!state.date)  { showErr('Please select a date.');           return; }
+      if (!state.time)  { showErr('Please select a time.');           return; }
+      if (!name)        { showErr('Please enter your name.');         return; }
+      if (!phone)       { showErr('Please enter your phone number.'); return; }
+
       errEl.hidden = true; okEl.hidden = true;
       submitBtn.textContent = 'Sending…';
       submitBtn.disabled = true;
+
       try {
-        var res  = await fetch('/api/bookings', {
+        var res = await fetch('/api/bookings', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            client_name:    state.name,
-            client_phone:   state.phone,
-            client_email:   state.email,
-            service_name:   state.service,
-            stylist_name:   state.stylist,
+            client_name:    name,
+            client_phone:   phone,
+            client_email:   (document.getElementById('b-email').value   || '').trim(),
+            service_name:   service,
+            stylist_name:   document.getElementById('b-stylist').value  || 'No preference',
             preferred_date: state.date,
             preferred_time: state.time,
-            message:        state.notes
+            message:        (document.getElementById('b-message').value || '').trim()
           })
         });
         var data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Something went wrong.');
         okEl.textContent = '✓ ' + data.message;
         okEl.hidden = false;
-        submitBtn.hidden = true;
-        backBtn.hidden   = true;
+        submitBtn.textContent = 'Request Sent ✓';
       } catch (err) {
         errEl.textContent = err.message;
         errEl.hidden = false;
-        submitBtn.textContent = 'Confirm Booking →';
+        submitBtn.textContent = 'Request Appointment →';
         submitBtn.disabled = false;
       }
     });
 
-    /* ---- Load services into step 1 ---- */
-    async function loadWizardServices() {
-      var el = document.getElementById('bw-services-list');
-      if (!el) return;
+    function showErr(msg) {
+      errEl.textContent = msg; errEl.hidden = false;
+      setTimeout(function () { errEl.hidden = true; }, 4000);
+    }
+
+    /* ---- Populate dropdowns ---- */
+    async function loadServiceDropdown() {
+      var sel = document.getElementById('b-service');
+      if (!sel) return;
       try {
         var res  = await fetch('/api/services');
-        if (!res.ok) throw new Error();
+        if (!res.ok) return;
         var data = await res.json();
         var cats = {};
         data.forEach(function (s) { if (!cats[s.category]) cats[s.category] = []; cats[s.category].push(s); });
-        el.innerHTML = Object.entries(cats).map(function (entry) {
-          var cat = entry[0], services = entry[1];
-          return '<p class="bw-service-category">' + cat + '</p>' +
-            services.map(function (s) {
-              var price = s.price_is_from ? 'from $' + s.price : (s.price === 'Varies' ? 'Varies' : '$' + s.price);
-              return '<button type="button" class="bw-service-btn" data-value="' + s.name + '" data-label="' + s.name + '">' +
-                '<span class="bw-service-btn__name">' + s.name + '</span>' +
-                '<span class="bw-service-btn__meta">' + s.duration + ' · ' + price + '</span>' +
-                '</button>';
-            }).join('');
-        }).join('');
-        el.querySelectorAll('.bw-service-btn').forEach(function (btn) {
-          btn.addEventListener('click', function () {
-            el.querySelectorAll('.bw-service-btn').forEach(function (b) { b.classList.remove('selected'); });
-            this.classList.add('selected');
-            state.service = this.dataset.value;
-            state.serviceLabel = this.dataset.label;
+        Object.entries(cats).forEach(function (entry) {
+          var grp = document.createElement('optgroup');
+          grp.label = entry[0];
+          entry[1].forEach(function (s) {
+            var opt = document.createElement('option');
+            var price = s.price_is_from ? 'from $' + s.price : (s.price === 'Varies' ? 'Varies' : '$' + s.price);
+            opt.value = s.name;
+            opt.textContent = s.name + ' — ' + price;
+            grp.appendChild(opt);
           });
+          sel.appendChild(grp);
         });
-        // Re-select if returning to step 1
-        if (state.service) {
-          var cur = el.querySelector('[data-value="' + state.service + '"]');
-          if (cur) cur.classList.add('selected');
-        }
-      } catch (_) {
-        el.innerHTML = '<p style="color:var(--gray-500);font-size:0.875rem;">Could not load services — please call us to book.</p>';
-      }
+      } catch (_) {}
     }
 
-    /* ---- Load stylists into step 2 ---- */
-    async function loadWizardStylists() {
-      var el = document.getElementById('bw-stylist-list');
-      if (!el) return;
+    async function loadStylistDropdown() {
+      var sel = document.getElementById('b-stylist');
+      if (!sel) return;
       try {
         var res  = await fetch('/api/stylists');
         if (!res.ok) return;
         var data = await res.json();
         data.forEach(function (s) {
-          var btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'bw-stylist-card';
-          btn.dataset.value = s.name;
-          btn.dataset.label = s.name + ' — ' + s.role;
-          var photo = s.photo_url
-            ? '<img src="' + s.photo_url + '" alt="' + s.name + '" class="bw-stylist-card__photo" />'
-            : '<span class="bw-stylist-card__photo bw-stylist-card__photo--placeholder" aria-hidden="true"></span>';
-          btn.innerHTML = photo +
-            '<span>' +
-              '<span class="bw-stylist-card__name">' + s.name + '</span>' +
-              '<span class="bw-stylist-card__role">' + s.role + '</span>' +
-            '</span>';
-          el.appendChild(btn);
+          var opt = document.createElement('option');
+          opt.value = s.name;
+          opt.textContent = s.name + ' — ' + s.role;
+          sel.appendChild(opt);
         });
       } catch (_) {}
-      el.querySelectorAll('.bw-stylist-card').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          el.querySelectorAll('.bw-stylist-card').forEach(function (b) { b.classList.remove('selected'); });
-          this.classList.add('selected');
-          state.stylist = this.dataset.value || 'No preference';
-          state.stylistLabel = this.dataset.label || 'No preference';
-        });
-      });
     }
 
-    loadWizardServices();
-    loadWizardStylists();
+    loadServiceDropdown();
+    loadStylistDropdown();
   }());
 
 
