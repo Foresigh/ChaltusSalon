@@ -538,17 +538,47 @@
     }
 
     async function loadStylistDropdown() {
-      var sel = document.getElementById('b-stylist');
-      if (!sel) return;
+      var picker = document.getElementById('stylist-picker');
+      var hidden = document.getElementById('b-stylist');
+      if (!picker) return;
+
+      function selectCard(btn) {
+        picker.querySelectorAll('.stylist-card').forEach(function (c) { c.classList.remove('selected'); });
+        btn.classList.add('selected');
+        hidden.value = btn.dataset.value;
+        updateSummary();
+      }
+
+      // "No preference" card — always first
+      var noPref = document.createElement('button');
+      noPref.type = 'button';
+      noPref.className = 'stylist-card selected';
+      noPref.dataset.value = 'No preference';
+      noPref.innerHTML =
+        '<span class="stylist-card__avatar stylist-card__avatar--any" aria-hidden="true">?</span>' +
+        '<span class="stylist-card__info"><span class="stylist-card__name">No Preference</span><span class="stylist-card__role">Any available</span></span>';
+      noPref.addEventListener('click', function () { selectCard(this); });
+      picker.appendChild(noPref);
+
       try {
         var res  = await fetch('/api/stylists');
         if (!res.ok) return;
         var data = await res.json();
         data.forEach(function (s) {
-          var opt = document.createElement('option');
-          opt.value = s.name;
-          opt.textContent = s.name + ' — ' + s.role;
-          sel.appendChild(opt);
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'stylist-card';
+          btn.dataset.value = s.name;
+          var avatar = s.photo_url
+            ? '<img src="' + s.photo_url + '" alt="' + s.name + '" class="stylist-card__avatar" />'
+            : '<span class="stylist-card__avatar stylist-card__avatar--placeholder" aria-hidden="true">' + s.name.charAt(0) + '</span>';
+          btn.innerHTML = avatar +
+            '<span class="stylist-card__info">' +
+              '<span class="stylist-card__name">' + s.name + '</span>' +
+              '<span class="stylist-card__role">' + s.role + '</span>' +
+            '</span>';
+          btn.addEventListener('click', function () { selectCard(this); });
+          picker.appendChild(btn);
         });
       } catch (_) {}
     }
