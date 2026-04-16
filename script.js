@@ -396,9 +396,11 @@
     async function loadSlots(date) {
       var el = document.getElementById('cal-times');
       el.innerHTML = '<p class="cal-times__hint">Loading…</p>';
+      var stylist = (document.getElementById('b-stylist') || {}).value || 'No preference';
       var booked = [];
       try {
-        var r = await fetch('/api/availability?date=' + date);
+        var r = await fetch('/api/availability?date=' + encodeURIComponent(date) +
+          '&stylist=' + encodeURIComponent(stylist));
         if (r.ok) booked = (await r.json()).booked || [];
       } catch (_) {}
 
@@ -471,11 +473,10 @@
       }
     }
 
-    // Update summary when dropdowns change
-    ['b-service','b-stylist'].forEach(function (id) {
-      var el = document.getElementById(id);
-      if (el) el.addEventListener('change', updateSummary);
-    });
+    // Update summary when service changes
+    var serviceEl = document.getElementById('b-service');
+    if (serviceEl) serviceEl.addEventListener('change', updateSummary);
+
 
     /* ---- Submit ---- */
     submitBtn.addEventListener('click', async function () {
@@ -575,6 +576,8 @@
       /* ---- select an option ---- */
       function pick(value, avatarHtml, label) {
         hidden.value = value;
+        updateSummary();
+        if (state.date) { state.time = ''; loadSlots(state.date); } // reload availability for new stylist
         trigger.querySelector('.stylist-dd__avatar, img.stylist-dd__avatar-img').outerHTML; // replaced below
         // rebuild trigger inner
         trigger.innerHTML =
