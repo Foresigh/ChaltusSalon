@@ -275,27 +275,29 @@
     } catch (_) { /* offline */ }
   }
 
-  // Load gallery from API — replaces static grid only if DB has items
+  // Load gallery from API — replaces static grid only if DB has valid items
   async function loadGallery() {
     try {
       const res  = await fetch('/api/gallery');
       if (!res.ok) return;
       const data = await res.json();
-      if (!data.length) return;  // keep static Unsplash placeholders
+      if (!data.length) return;  // keep static placeholders if empty
+
+      // Filter out broken entries (no url)
+      const items = data.filter(function (img) { return img.url; });
+      if (!items.length) return;
+
       const grid = document.querySelector('.gallery-grid');
       if (!grid) return;
-      grid.innerHTML = data.map(function (img) {
-        return `<div class="gallery-item fade-up">
-          <img src="${img.url}" alt="${img.alt_text || 'Chaltus Salon work'}" loading="lazy" width="500" height="667" />
+
+      grid.innerHTML = items.map(function (img, i) {
+        const featured = i === 0 ? ' featured' : '';
+        return `<div class="gallery-item${featured} visible">
+          <img src="${img.url}" alt="${img.alt_text || 'Chaltus Salon work'}" loading="lazy" width="500" height="667"
+               onerror="this.closest('.gallery-item').style.display='none'" />
           ${img.label ? `<div class="gallery-item__label">${img.label}</div>` : ''}
         </div>`;
       }).join('');
-      // Re-run fade observer on new elements
-      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        grid.querySelectorAll('.fade-up').forEach(function (el) {
-          fadeObserver.observe(el);
-        });
-      }
     } catch (_) { /* offline */ }
   }
 
