@@ -16,6 +16,12 @@ const pool = new Pool({
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 async function initDB() {
+  // Migrate existing tables — safe to run every boot
+  await pool.query(`
+    ALTER TABLE IF EXISTS gallery   ADD COLUMN IF NOT EXISTS url       TEXT DEFAULT '';
+    ALTER TABLE IF EXISTS stylists  ADD COLUMN IF NOT EXISTS photo_url TEXT DEFAULT '';
+  `).catch(() => {}); // ignore if tables don't exist yet (first boot)
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id       SERIAL PRIMARY KEY,
