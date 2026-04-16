@@ -554,43 +554,63 @@ p  { font-size: 1rem; }
 .gallery-item.featured { aspect-ratio: 3/5; }
 @media (max-width: 639px) { .gallery-item.featured { aspect-ratio: 3/4; } }
 
-/* Social section */
-.instagram-section { background: var(--gray-50); }
-.inline-link { color: var(--black); text-decoration: underline; }
-
-.social-embeds-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-  align-items: start;
+/* Social section — luxury dark banner */
+.social-section {
+  background: var(--black);
+  padding: 5rem 1.5rem;
+  text-align: center;
 }
-.social-embed-col {
-  min-width: 0;
+.social-section__inner {
+  max-width: 560px;
+  margin: 0 auto;
 }
-.social-embed-label {
+.social-section__eyebrow {
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gray-500);
+  margin-bottom: 1rem;
+}
+.social-section__heading {
+  font-size: clamp(1.8rem, 5vw, 3rem);
+  font-weight: 300;
+  letter-spacing: 0.08em;
+  color: var(--white);
+  margin-bottom: 1rem;
+}
+.social-section__sub {
+  font-size: 0.95rem;
+  color: var(--gray-400);
+  line-height: 1.7;
+  margin-bottom: 2.5rem;
+}
+.social-section__links {
   display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.social-section__btn {
+  display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.85rem;
+  padding: 0.75rem 2rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   font-weight: 500;
-  letter-spacing: 0.04em;
-  margin-bottom: 0.75rem;
-  color: var(--gray-700);
-}
-.social-embed-label a {
+  background: var(--white);
   color: var(--black);
-  text-decoration: underline;
+  border: 1px solid var(--white);
+  transition: background var(--t-base), color var(--t-base);
 }
-.social-embed-col .instagram-media,
-.social-embed-col .fb-page,
-.social-embed-col .fb-page span,
-.social-embed-col .fb-page span iframe {
-  width: 100% !important;
-  max-width: 100% !important;
+.social-section__btn:hover { background: transparent; color: var(--white); }
+.social-section__btn--outline {
+  background: transparent;
+  color: var(--white);
 }
-@media (max-width: 767px) {
-  .social-embeds-grid { grid-template-columns: 1fr; }
-}
+.social-section__btn--outline:hover { background: var(--white); color: var(--black); }
+.inline-link { color: var(--black); text-decoration: underline; }
 
 /* ================================================================
    STYLISTS SECTION
