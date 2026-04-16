@@ -26,6 +26,11 @@ const mailer = SALON_EMAIL ? nodemailer.createTransport({
   service: 'gmail',
   auth: { user: SALON_EMAIL, pass: process.env.EMAIL_PASS || '' }
 }) : null;
+if (mailer) {
+  console.log('✔  Email configured — notifications will send to', SALON_EMAIL);
+} else {
+  console.warn('⚠  EMAIL_USER not set — email notifications are disabled');
+}
 
 async function sendBookingEmails(booking) {
   if (!mailer) return; // email not configured — silent skip
@@ -54,7 +59,7 @@ async function sendBookingEmails(booking) {
       </table>
       <p style="margin-top:16px;font-size:13px;color:#888">Booking ID: #${id} · Reply to this email or call the client to confirm.</p>
     `
-  }).catch(e => console.warn('Salon email failed:', e.message));
+  }).then(() => console.log('✔  Salon notification sent')).catch(e => console.error('✗  Salon email failed:', e.message));
 
   // ── Confirm to customer (only if they provided an email) ─────────────────
   if (!client_email) return;
@@ -82,7 +87,7 @@ async function sendBookingEmails(booking) {
         <p style="font-size:12px;color:#aaa">Need to change your request? Call or text us at (801) 376-3976.</p>
       </div>
     `
-  }).catch(e => console.warn('Customer email failed:', e.message));
+  }).then(() => console.log('✔  Customer confirmation sent to', client_email)).catch(e => console.error('✗  Customer email failed:', e.message));
 }
 const JWT_SECRET    = process.env.JWT_SECRET || 'chaltus-salon-2024-change-in-prod';
 const USE_CLOUDINARY = !!process.env.CLOUDINARY_URL;
