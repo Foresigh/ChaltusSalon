@@ -290,9 +290,8 @@
       const grid = document.querySelector('.gallery-grid');
       if (!grid) return;
 
-      grid.innerHTML = items.map(function (img, i) {
-        const featured = i === 0 ? ' featured' : '';
-        return `<div class="gallery-item${featured} visible">
+      grid.innerHTML = items.map(function (img) {
+        return `<div class="gallery-item visible">
           <img src="${img.url}" alt="${img.alt_text || 'Chaltus Salon work'}" loading="lazy" width="500" height="667"
                onerror="this.closest('.gallery-item').style.display='none'" />
           ${img.label ? `<div class="gallery-item__label">${img.label}</div>` : ''}
