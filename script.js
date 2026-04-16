@@ -612,7 +612,7 @@
         list.appendChild(li);
       }
 
-      var anyAvatar = '<span class="stylist-dd__avatar stylist-dd__avatar--any" aria-hidden="true">?</span>';
+      var anyAvatar = '<span class="stylist-dd__avatar stylist-dd__avatar--any" aria-hidden="true">✂</span>';
       addItem('Any stylist', anyAvatar, 'Any stylist', 'First available stylist');
 
       try {

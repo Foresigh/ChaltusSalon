@@ -1344,7 +1344,7 @@ p  { font-size: 1rem; }
   font-weight: 600;
 }
 .stylist-dd__avatar-img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
-.stylist-dd__avatar--any     { background: #f0f0f0; color: #999; }
+.stylist-dd__avatar--any     { background: #1a1a1a; color: #fff; font-size: 0.85rem; }
 .stylist-dd__avatar--initial { background: #e8e8e8; color: var(--gray-600); }
 .stylist-dd__label { flex: 1; }
 .stylist-dd__arrow { font-size: 0.7rem; color: var(--gray-400); transition: transform var(--t-base); }
