@@ -1580,3 +1580,52 @@ img[loading="lazy"] { content-visibility: auto; }
 
 /* Focus styles for accessibility */
 :focus-visible { outline: 2px solid var(--white); outline-offset: 3px; }
+
+/* ── Mobile sticky CTA bar ───────────────────────────────────────────────── */
+.mobile-cta-bar {
+  display: none;
+}
+@media (max-width: 767px) {
+  .mobile-cta-bar {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 999;
+    padding: 0.75rem 1rem;
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+    background: rgba(255,255,255,0.97);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(0,0,0,0.08);
+    gap: 0.75rem;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+  }
+  .mobile-cta-bar__btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    transition: opacity 0.15s ease;
+  }
+  .mobile-cta-bar__btn:active { opacity: 0.8; }
+  .mobile-cta-bar__btn--call {
+    background: #fff;
+    color: #111;
+    border: 1.5px solid #111;
+  }
+  .mobile-cta-bar__btn--book {
+    background: #111;
+    color: #fff;
+    border: 1.5px solid #111;
+  }
+  /* Push page content above the bar so footer isn't hidden */
+  body { padding-bottom: 80px; }
+}
