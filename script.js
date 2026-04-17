@@ -194,7 +194,7 @@
             ${services.map(function (s) {
               const sig = s.name.toLowerCase().includes('ethiopian') ? '<span class="price-item__badge">Signature</span>' : '';
               const priceStr = s.price_is_from ? 'from $' + s.price : (s.price === 'Varies' ? 'Varies' : '$' + s.price);
-              return `<div class="price-item ${sig ? 'price-item--featured' : ''}">
+              return `<div class="price-item ${sig ? 'price-item--featured' : ''}" data-service="${s.name.replace(/"/g, '&quot;')}" role="button" tabindex="0" title="Book ${s.name}">
                 <span class="price-item__name">${s.name}${sig}</span>
                 <span class="price-item__duration">${s.duration}</span>
                 <span class="price-item__price">${priceStr}</span>
@@ -773,7 +773,7 @@
     }
   }
 
-  document.addEventListener('click', function (e) {
+  function handleServiceClick(e) {
     var btn = e.target.closest('[data-service]');
     if (!btn) return;
     var keyword = btn.getAttribute('data-service');
@@ -781,8 +781,12 @@
     e.preventDefault();
     var bookingSection = document.getElementById('booking');
     if (bookingSection) bookingSection.scrollIntoView({ behavior: 'smooth' });
-    // Give the dropdown time to populate (first visit) then select
     setTimeout(function () { selectServiceInDropdown(keyword); }, 350);
+  }
+
+  document.addEventListener('click', handleServiceClick);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') handleServiceClick(e);
   });
 
 

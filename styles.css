@@ -892,7 +892,12 @@ p  { font-size: 1rem; }
   gap: var(--s2);
   padding: var(--s3) 0;
   border-bottom: 1px solid var(--gray-100);
+  cursor: pointer;
+  transition: background var(--t-base), padding-left var(--t-base);
+  border-radius: 4px;
 }
+.price-item:hover  { background: var(--gray-50); padding-left: var(--s2); }
+.price-item:active { background: var(--gray-100); }
 .price-item:last-child { border-bottom: none; }
 
 .price-item__name {
