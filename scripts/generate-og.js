@@ -92,7 +92,7 @@ const ogSvg = `
     font-family="Arial,Helvetica,sans-serif"
     font-size="42" font-weight="700"
     fill="#b89b6a" text-anchor="middle" letter-spacing="8">
-    LUXURY HAIR SALON
+    HAIR SALON
   </text>
 
   <!-- Tagline -->
