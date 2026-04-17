@@ -325,7 +325,7 @@
             <div class="form-grid">
               <div class="field">
                 <label>Application ID
-                  <span class="field-hint">Starts with <code>sq0idp-</code></span>
+                  <span class="field-hint">Starts with <code>sq0idp-</code> — safe to store here</span>
                 </label>
                 <input type="text" id="sq-app-id" placeholder="sq0idp-XXXXXXXXXXXXXXXXXXXXXXXX" autocomplete="off" />
               </div>
@@ -334,6 +334,12 @@
                   <span class="field-hint">Found in Square Dashboard → Locations</span>
                 </label>
                 <input type="text" id="sq-location-id" placeholder="LXXXXXXXXXXXXXXXXX" autocomplete="off" />
+              </div>
+              <div class="field field--full">
+                <label>Access Token
+                  <span class="field-hint">Credentials tab → Access Token — stored encrypted, never shown again</span>
+                </label>
+                <input type="password" id="sq-access-token" placeholder="EAAAl…leave blank to keep existing" autocomplete="off" />
               </div>
               <div class="field field--full">
                 <label>Environment

@@ -19,6 +19,12 @@ async function initDB() {
   // Migrate existing tables — run each separately so one failure doesn't block the other
   await pool.query(`ALTER TABLE IF EXISTS gallery  ADD COLUMN IF NOT EXISTS url       TEXT DEFAULT ''`).catch(e => console.warn('migration gallery.url:', e.message));
   await pool.query(`ALTER TABLE IF EXISTS stylists ADD COLUMN IF NOT EXISTS photo_url TEXT DEFAULT ''`).catch(e => console.warn('migration stylists.photo_url:', e.message));
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS settings (
+      key   TEXT PRIMARY KEY,
+      value TEXT NOT NULL DEFAULT ''
+    )
+  `).catch(e => console.warn('migration settings:', e.message));
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (

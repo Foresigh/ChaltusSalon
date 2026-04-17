@@ -644,13 +644,6 @@ $('#pw-form').addEventListener('submit', async e => {
 
 // ── Square Setup ───────────────────────────────────────────────────────────────
 (function initSquareSetup() {
-  const SQ_KEY = 'sq_config';
-  const saved = JSON.parse(localStorage.getItem(SQ_KEY) || '{}');
-
-  if (saved.appId)      { $('#sq-app-id').value      = saved.appId; }
-  if (saved.locationId) { $('#sq-location-id').value = saved.locationId; }
-  if (saved.env)        { $('#sq-env').value          = saved.env; }
-
   function updateBadge(active) {
     const badge = $('#sq-status-badge');
     if (active) {
@@ -662,13 +655,21 @@ $('#pw-form').addEventListener('submit', async e => {
     }
   }
 
-  updateBadge(saved.appId && saved.locationId);
+  // Load current config from server
+  apiFetch('/api/sq-config').then(cfg => {
+    if (!cfg) return;
+    if (cfg.appId)      $('#sq-app-id').value      = cfg.appId;
+    if (cfg.locationId) $('#sq-location-id').value = cfg.locationId;
+    if (cfg.env)        $('#sq-env').value          = cfg.env;
+    updateBadge(cfg.enabled);
+  });
 
-  $('#sq-save-btn').addEventListener('click', () => {
-    const msg        = $('#sq-save-msg');
-    const appId      = $('#sq-app-id').value.trim();
-    const locationId = $('#sq-location-id').value.trim();
-    const env        = $('#sq-env').value;
+  $('#sq-save-btn').addEventListener('click', async () => {
+    const msg         = $('#sq-save-msg');
+    const appId       = $('#sq-app-id').value.trim();
+    const locationId  = $('#sq-location-id').value.trim();
+    const accessToken = $('#sq-access-token').value.trim();
+    const env         = $('#sq-env').value;
 
     msg.hidden = true;
 
@@ -679,10 +680,19 @@ $('#pw-form').addEventListener('submit', async e => {
       return;
     }
 
-    localStorage.setItem(SQ_KEY, JSON.stringify({ appId, locationId, env }));
+    const result = await apiFetch('/api/sq-config', {
+      method: 'POST',
+      body: JSON.stringify({ appId, locationId, env, accessToken: accessToken || undefined }),
+    });
+
+    if (!result) return; // apiFetch already handles error display
+
     updateBadge(true);
+    $('#sq-access-token').value = ''; // clear token field after saving
     msg.className = 'alert alert--success';
-    msg.textContent = '✓ Square credentials saved. Add SQUARE_ACCESS_TOKEN to Railway to complete setup.';
+    msg.textContent = accessToken
+      ? '✓ All Square credentials saved — payments are active.'
+      : '✓ App ID and Location ID saved. Paste your Access Token to fully activate payments.';
     msg.hidden = false;
   });
 })();
