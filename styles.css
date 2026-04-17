@@ -1641,18 +1641,20 @@ img[loading="lazy"] { content-visibility: auto; }
   .mobile-cta-bar {
     display: flex;
     position: fixed;
-    bottom: calc(2rem + env(safe-area-inset-bottom));
-    left: 50%;
-    transform: translateX(-50%);
+    bottom: 0;
+    left: 0;
+    right: 0;
+    transform: none;
     z-index: 999;
-    padding: 0.5rem;
+    padding: 0.6rem 1rem calc(0.6rem + env(safe-area-inset-bottom));
     background: #111;
-    border-radius: 50px;
-    gap: 0.4rem;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.28);
-    width: auto;
+    border-radius: 0;
+    gap: 0.5rem;
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.3);
+    width: 100%;
     white-space: nowrap;
     transition: opacity 0.3s ease;
+    justify-content: center;
   }
   .mobile-cta-bar__btn {
     display: flex;
