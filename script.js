@@ -725,6 +725,16 @@
             : '<span class="stylist-dd__avatar stylist-dd__avatar--initial" aria-hidden="true">' + s.name.charAt(0) + '</span>';
           addItem(s.name, av, s.name, s.role);
         });
+        // Inject owner photo into mobile pill (first stylist with a photo)
+        var owner = data.find(function (s) { return s.photo_url; });
+        if (owner) {
+          var pillPhoto = document.getElementById('pill-owner-photo');
+          if (pillPhoto) {
+            pillPhoto.src = owner.photo_url;
+            pillPhoto.alt = owner.name;
+            pillPhoto.hidden = false;
+          }
+        }
       } catch (_) {}
     }
 

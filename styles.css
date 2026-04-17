@@ -1845,5 +1845,15 @@ img[loading="lazy"] { content-visibility: auto; }
     color: #111;
     border: none;
   }
+  .mobile-cta-bar__owner-photo {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: top center;
+    border: 2px solid #b89b6a;
+    flex-shrink: 0;
+    margin-left: 0.25rem;
+  }
   body { padding-bottom: 90px; }
 }
