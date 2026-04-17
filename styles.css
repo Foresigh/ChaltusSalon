@@ -1806,8 +1806,8 @@ img[loading="lazy"] { content-visibility: auto; }
     display: flex;
     position: fixed;
     bottom: calc(1.25rem + env(safe-area-inset-bottom));
-    left: 1.25rem;
-    right: 1.25rem;
+    left: 0.5rem;
+    right: 0.5rem;
     z-index: 999;
     padding: 0.5rem 1rem;
     background: #111;
