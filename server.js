@@ -687,7 +687,7 @@ app.post('/api/charge', async (req, res) => {
       sourceId,
       idempotencyKey: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       amountMoney:    { amount: BigInt(3000), currency: 'USD' },
-      locationId,
+      locationId:     SQUARE_LOC_ID,
       note:           `$30 deposit — ${service_name} for ${client_name}`,
     });
 
