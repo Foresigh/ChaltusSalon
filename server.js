@@ -14,7 +14,7 @@ const cors       = require('cors');
 const cloudinary = require('cloudinary').v2;
 const { Resend } = require('resend');
 const twilio      = require('twilio');
-const { Client: SquareClient, Environment: SqEnv } = require('square');
+const { SquareClient, SquareEnvironment } = require('square');
 const { pool, initDB } = require('./db');
 
 const app  = express();
@@ -50,12 +50,7 @@ const SQUARE_APP_ID = process.env.SQUARE_APP_ID       || '';
 const SQUARE_LOC_ID = process.env.SQUARE_LOCATION_ID  || '';
 const SQUARE_ENV    = process.env.SQUARE_ENV           || 'sandbox';
 
-const sqClient = SQUARE_TOKEN ? new SquareClient({
-  accessToken: SQUARE_TOKEN,
-  environment: SQUARE_ENV === 'production' ? SqEnv.Production : SqEnv.Sandbox,
-}) : null;
-
-if (sqClient) {
+if (SQUARE_TOKEN) {
   console.log('✔  Square payments configured —', SQUARE_ENV);
 } else {
   console.warn('⚠  SQUARE_ACCESS_TOKEN not set — payment collection disabled');
@@ -734,13 +729,13 @@ app.post('/api/charge', async (req, res) => {
 
   if (!token) return res.status(503).json({ error: 'Payments are not configured yet.' });
 
-  const client = new SquareClient({
-    accessToken: token,
-    environment: env === 'production' ? SqEnv.Production : SqEnv.Sandbox,
+  const sqClient = new SquareClient({
+    token,
+    environment: env === 'production' ? SquareEnvironment.Production : SquareEnvironment.Sandbox,
   });
 
   try {
-    const { result } = await client.paymentsApi.createPayment({
+    const response = await sqClient.payments.create({
       sourceId,
       idempotencyKey: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       amountMoney:    { amount: BigInt(3000), currency: 'USD' },
@@ -748,7 +743,7 @@ app.post('/api/charge', async (req, res) => {
       note:           `$30 deposit — ${service_name} for ${client_name}`,
     });
 
-    const paymentId = result.payment.id;
+    const paymentId = response.payment.id;
     console.log('✔  Square charge', paymentId, '— $30 from', client_name);
 
     const { rows } = await pool.query(
@@ -760,7 +755,7 @@ app.post('/api/charge', async (req, res) => {
     sendBookingEmails(rows[0]);
     res.json({ ok: true, bookingId: rows[0].id, paymentId });
   } catch (err) {
-    const detail = err?.errors?.[0]?.detail || err.message || 'Payment failed';
+    const detail = err?.errors?.[0]?.detail || err?.message || 'Payment failed. Please check your card details.';
     console.error('✗  Square charge failed:', detail);
     res.status(402).json({ error: detail });
   }
