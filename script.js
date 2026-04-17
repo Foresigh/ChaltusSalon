@@ -294,12 +294,8 @@
     var state = { date: '', time: '' };
 
     /* ---- Square payment init ---- */
-    var sqCard   = null;
-    var sqReady  = false;
+    var sqReady   = false;
     var sqEnabled = false;
-
-    var cardContainer = document.getElementById('card-container');
-    var sqLoadingEl   = document.getElementById('sq-loading');
 
     function loadSquareScript(src) {
       return new Promise(function (resolve, reject) {
@@ -311,13 +307,16 @@
       });
     }
 
-    function withTimeout(promise, ms) {
-      return Promise.race([
-        promise,
-        new Promise(function (_, reject) {
-          setTimeout(function () { reject(new Error('timeout')); }, ms);
-        }),
-      ]);
+    var sqCardNumber = null;
+
+    function attachField(field, id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      field.attach('#' + id);
+      field.addEventListener('focusClassAdded',  function () { el.classList.add('sq-focus'); });
+      field.addEventListener('focusClassRemoved', function () { el.classList.remove('sq-focus'); });
+      field.addEventListener('errorClassAdded',   function () { el.classList.add('sq-error'); });
+      field.addEventListener('errorClassRemoved', function () { el.classList.remove('sq-error'); });
     }
 
     async function initSquare(cfg) {
@@ -325,31 +324,32 @@
         var sdkUrl = cfg.env === 'production'
           ? 'https://web.squarecdn.com/v1/square.js'
           : 'https://sandbox.web.squarecdn.com/v1/square.js';
-
-        console.log('Square: loading SDK…', sdkUrl);
         await loadSquareScript(sdkUrl);
-        console.log('Square: SDK loaded, initialising payments…');
 
         var payments = window.Square.payments(cfg.appId, cfg.locationId);
-        console.log('Square: payments() created, building card…');
 
-        sqCard = await withTimeout(payments.card({
-          style: {
-            '.input-container': { borderColor: '#d4d4d4', borderRadius: '6px' },
-            '.input-container.is-focus': { borderColor: '#0a0a0a' },
-            '.input-container.is-error':  { borderColor: '#c0392b' },
-            input: { fontSize: '14px', color: '#141414' },
-          },
-        }), 10000);
-        console.log('Square: card created, attaching…');
+        var fieldStyle = {
+          '.input-container': { borderColor: 'transparent', borderRadius: '0' },
+          input: { fontSize: '14px', color: '#141414', padding: '0 12px' },
+          'input::placeholder': { color: '#8f8f8f' },
+        };
 
-        sqCard.attach('#card-container'); // renders synchronously, promise may not resolve
-        if (sqLoadingEl) sqLoadingEl.hidden = true;
+        var results = await Promise.all([
+          payments.cardNumber({ style: fieldStyle }),
+          payments.expirationDate({ style: fieldStyle }),
+          payments.cvv({ style: fieldStyle }),
+          payments.postalCode({ style: fieldStyle }),
+        ]);
+
+        sqCardNumber = results[0];
+        attachField(results[0], 'sq-card-number');
+        attachField(results[1], 'sq-expiry');
+        attachField(results[2], 'sq-cvv');
+        attachField(results[3], 'sq-postal');
+
         sqReady = true;
-        console.log('✔ Square card form ready');
       } catch (e) {
-        console.error('Square init failed at step:', e.message, e);
-        if (sqLoadingEl) sqLoadingEl.hidden = true;
+        console.error('Square init failed:', e.message);
         var depositEl = document.getElementById('bk-deposit');
         if (depositEl) depositEl.hidden = true;
         submitBtn.textContent = 'Request Appointment →';
@@ -592,7 +592,7 @@
         /* ── Payment flow ── */
         submitBtn.textContent = 'Processing payment…';
         try {
-          var tokenResult = await sqCard.tokenize();
+          var tokenResult = await sqCardNumber.tokenize();
           if (tokenResult.status !== 'OK') {
             var cardErr = tokenResult.errors
               ? tokenResult.errors.map(function (e) { return e.message; }).join(', ')
