@@ -334,18 +334,18 @@ p  { font-size: 1rem; }
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 3rem;
-    padding-left: calc(var(--pad-x) + 2rem);
-    padding-right: calc(var(--pad-x) + 2rem);
-    max-width: var(--max-w);
-    margin: 0 auto;
+    gap: 4rem;
+    padding-left: 5vw;
+    padding-right: 5vw;
+    max-width: 100%;
+    width: 100%;
   }
-  .hero__text { flex: 1; max-width: 560px; }
+  .hero__text { flex: 1; max-width: 580px; }
 }
-@media (min-width: 1240px) {
+@media (min-width: 1400px) {
   .hero__content {
-    padding-left: calc((100vw - var(--max-w)) / 2 + var(--pad-x));
-    padding-right: calc((100vw - var(--max-w)) / 2 + var(--pad-x));
+    padding-left: 8vw;
+    padding-right: 8vw;
   }
 }
 
