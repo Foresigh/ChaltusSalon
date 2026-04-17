@@ -597,7 +597,7 @@
           var chargeData = await chargeRes.json();
           if (!chargeRes.ok) throw new Error(chargeData.error || 'Payment failed.');
 
-          okEl.textContent = '✓ $30 deposit received! Your appointment is requested — we\'ll confirm within 24 hours.';
+          okEl.textContent = '✓ $30 deposit received! Your appointment is requested — we\'ll be in touch as soon as possible.';
           okEl.hidden = false;
           submitBtn.textContent = 'Deposit Paid ✓';
         } catch (err) {

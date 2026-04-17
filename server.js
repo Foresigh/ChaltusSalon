@@ -88,7 +88,7 @@ async function buildEmailHTML({ type, booking, stylistRow, serviceRow }) {
   const bannerText   = type === 'pending'   ? 'Appointment Requested'
                      : type === 'confirmed' ? 'Appointment Confirmed ✓'
                      :                        'Appointment Cancelled';
-  const subText      = type === 'pending'   ? `Hi ${client_name}, we received your booking request. We'll confirm within 24 hours.`
+  const subText      = type === 'pending'   ? `Hi ${client_name}, we received your booking request. We'll be in touch as soon as possible.`
                      : type === 'confirmed' ? `Hi ${client_name}, your appointment is all set. We look forward to seeing you!`
                      :                        `Hi ${client_name}, unfortunately your appointment has been cancelled. Please call us to rebook.`;
 
@@ -206,7 +206,7 @@ async function sendBookingEmails(booking) {
 
   // ── Customer SMS ─────────────────────────────────────────────────────────
   sendSMS(client_phone,
-    `Hi ${client_name}, we received your booking request at Chaltus Salon for ${service_name} on ${dateLabel} at ${preferred_time}. We'll confirm within 24 hours. Questions? Call (801) 376-3976.`
+    `Hi ${client_name}, we received your booking request at Chaltus Salon for ${service_name} on ${dateLabel} at ${preferred_time}. We'll be in touch as soon as possible. Questions? Call (801) 376-3976.`
   );
 
   // ── Customer email receipt ────────────────────────────────────────────────
@@ -550,7 +550,7 @@ app.post('/api/bookings', async (req, res) => {
     const booking = rows[0];
     // Fire-and-forget — don't block the response on email delivery
     sendBookingEmails(booking);
-    res.json({ id: booking.id, message: "Booking request received! We'll confirm within 24 hours." });
+    res.json({ id: booking.id, message: "Booking request received! We'll be in touch as soon as possible." });
   } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 
