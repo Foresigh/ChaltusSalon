@@ -237,6 +237,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// ── Legal pages — before static so /privacy and /terms are not swallowed ──────
+app.get('/privacy', (_req, res) => res.sendFile(path.join(__dirname, 'privacy.html')));
+app.get('/terms',   (_req, res) => res.sendFile(path.join(__dirname, 'terms.html')));
+
 // Static file serving — ORDER MATTERS
 app.use('/uploads', express.static(UPLOADS));
 app.use('/images',  express.static(path.join(__dirname, 'images')));
@@ -768,10 +772,6 @@ app.get('/api/subscribers', auth, async (_req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
-
-// ── Static legal pages ─────────────────────────────────────────────────────────
-app.get('/privacy', (_req, res) => res.sendFile(path.join(__dirname, 'privacy.html')));
-app.get('/terms',   (_req, res) => res.sendFile(path.join(__dirname, 'terms.html')));
 
 // ── SPA fallback ───────────────────────────────────────────────────────────────
 app.get('*', (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
