@@ -654,63 +654,20 @@ app.get('/api/stats', auth, async (_req, res) => {
 // SQUARE PAYMENTS
 // ════════════════════════════════════════════════════════════════════════════════
 
-// Helper — read a setting from DB, fall back to value
-async function getSetting(key, fallback) {
-  const row = (await pool.query('SELECT value FROM settings WHERE key=$1', [key])).rows[0];
-  return row ? row.value : fallback;
-}
-async function setSetting(key, value) {
-  await pool.query(
-    'INSERT INTO settings(key,value) VALUES($1,$2) ON CONFLICT(key) DO UPDATE SET value=$2',
-    [key, value]
-  );
-}
-
 // Public config — appId + locationId are safe to expose client-side
-// Reads from DB first (set via admin), falls back to Railway env vars
-app.get('/api/sq-config', async (_req, res) => {
-  try {
-    const [appId, locationId, env] = await Promise.all([
-      getSetting('sq_app_id',      SQUARE_APP_ID),
-      getSetting('sq_location_id', SQUARE_LOC_ID),
-      getSetting('sq_env',         SQUARE_ENV),
-    ]);
-    // Access token: DB takes priority over env var (so admin can update it)
-    const token = await getSetting('sq_access_token', SQUARE_TOKEN);
-    res.json({
-      appId,
-      locationId,
-      env,
-      enabled: !!(token && appId && locationId),
-    });
-  } catch (err) {
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// Save Square config from admin dashboard (auth required)
-app.post('/api/sq-config', auth, async (req, res) => {
-  try {
-    const { appId, locationId, env, accessToken } = req.body;
-    if (!appId || !locationId) return res.status(400).json({ error: 'appId and locationId are required' });
-    await Promise.all([
-      setSetting('sq_app_id',      appId.trim()),
-      setSetting('sq_location_id', locationId.trim()),
-      setSetting('sq_env',         env || 'sandbox'),
-      accessToken ? setSetting('sq_access_token', accessToken.trim()) : Promise.resolve(),
-    ]);
-    // Reinitialise Square client with new token if provided
-    if (accessToken) {
-      console.log('✔  Square config updated via admin dashboard');
-    }
-    res.json({ ok: true });
-  } catch (err) {
-    res.status(500).json({ error: 'Server error' });
-  }
+app.get('/api/sq-config', (_req, res) => {
+  res.json({
+    appId:      SQUARE_APP_ID,
+    locationId: SQUARE_LOC_ID,
+    env:        SQUARE_ENV,
+    enabled:    !!(SQUARE_TOKEN && SQUARE_APP_ID && SQUARE_LOC_ID),
+  });
 });
 
 // Charge $30 deposit + create booking in one shot
 app.post('/api/charge', async (req, res) => {
+  if (!SQUARE_TOKEN) return res.status(503).json({ error: 'Payments are not configured yet.' });
+
   const { sourceId, booking } = req.body;
   const {
     client_name, client_email = '', client_phone, service_name,
@@ -720,18 +677,9 @@ app.post('/api/charge', async (req, res) => {
   if (!sourceId || !client_name || !client_phone || !service_name || !preferred_date || !preferred_time)
     return res.status(400).json({ error: 'Missing required fields.' });
 
-  // Read live config from DB (falls back to env vars)
-  const [token, locationId, env] = await Promise.all([
-    getSetting('sq_access_token', SQUARE_TOKEN),
-    getSetting('sq_location_id',  SQUARE_LOC_ID),
-    getSetting('sq_env',          SQUARE_ENV),
-  ]);
-
-  if (!token) return res.status(503).json({ error: 'Payments are not configured yet.' });
-
   const sqClient = new SquareClient({
-    token,
-    environment: env === 'production' ? SquareEnvironment.Production : SquareEnvironment.Sandbox,
+    token:       SQUARE_TOKEN,
+    environment: SQUARE_ENV === 'production' ? SquareEnvironment.Production : SquareEnvironment.Sandbox,
   });
 
   try {

@@ -642,61 +642,6 @@ $('#pw-form').addEventListener('submit', async e => {
   if (res.ok) $('#pw-form').reset();
 });
 
-// ── Square Setup ───────────────────────────────────────────────────────────────
-(function initSquareSetup() {
-  function updateBadge(active) {
-    const badge = $('#sq-status-badge');
-    if (active) {
-      badge.textContent = '✓ Configured';
-      badge.className = 'setup-badge setup-badge--active';
-    } else {
-      badge.textContent = 'Not configured';
-      badge.className = 'setup-badge setup-badge--pending';
-    }
-  }
-
-  // Load current config from server
-  apiFetch('/api/sq-config').then(cfg => {
-    if (!cfg) return;
-    if (cfg.appId)      $('#sq-app-id').value      = cfg.appId;
-    if (cfg.locationId) $('#sq-location-id').value = cfg.locationId;
-    if (cfg.env)        $('#sq-env').value          = cfg.env;
-    updateBadge(cfg.enabled);
-  });
-
-  $('#sq-save-btn').addEventListener('click', async () => {
-    const msg         = $('#sq-save-msg');
-    const appId       = $('#sq-app-id').value.trim();
-    const locationId  = $('#sq-location-id').value.trim();
-    const accessToken = $('#sq-access-token').value.trim();
-    const env         = $('#sq-env').value;
-
-    msg.hidden = true;
-
-    if (!appId || !locationId) {
-      msg.className = 'alert alert--error';
-      msg.textContent = 'Please fill in both Application ID and Location ID.';
-      msg.hidden = false;
-      return;
-    }
-
-    const result = await apiFetch('/api/sq-config', {
-      method: 'POST',
-      body: JSON.stringify({ appId, locationId, env, accessToken: accessToken || undefined }),
-    });
-
-    if (!result) return; // apiFetch already handles error display
-
-    updateBadge(true);
-    $('#sq-access-token').value = ''; // clear token field after saving
-    msg.className = 'alert alert--success';
-    msg.textContent = accessToken
-      ? '✓ All Square credentials saved — payments are active.'
-      : '✓ App ID and Location ID saved. Paste your Access Token to fully activate payments.';
-    msg.hidden = false;
-  });
-})();
-
 // ── Boot ───────────────────────────────────────────────────────────────────────
 function bootApp() {
   $('#login-screen').hidden = true;
