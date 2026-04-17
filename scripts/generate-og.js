@@ -15,49 +15,111 @@ const H = 630;
 const ogSvg = `
 <svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
   <defs>
-    <radialGradient id="glow" cx="50%" cy="48%" r="48%">
-      <stop offset="0%"   stop-color="#1e1e1e"/>
-      <stop offset="100%" stop-color="#0a0a0a"/>
+    <!-- Subtle vignette gradient -->
+    <radialGradient id="vignette" cx="50%" cy="50%" r="70%">
+      <stop offset="0%"   stop-color="#1a1a1a"/>
+      <stop offset="100%" stop-color="#080808"/>
     </radialGradient>
   </defs>
 
-  <rect width="${W}" height="${H}" fill="#0a0a0a"/>
-  <rect width="${W}" height="${H}" fill="url(#glow)"/>
+  <!-- Background -->
+  <rect width="${W}" height="${H}" fill="url(#vignette)"/>
 
-  <!-- Outer border -->
-  <rect x="36" y="36" width="${W-72}" height="${H-72}" fill="none" stroke="#222" stroke-width="1"/>
+  <!-- Gold border frame — top/bottom thick bars -->
+  <rect x="0" y="0"    width="${W}" height="14" fill="#b89b6a"/>
+  <rect x="0" y="${H-14}" width="${W}" height="14" fill="#b89b6a"/>
+  <!-- Gold border frame — left/right bars -->
+  <rect x="0"     y="0" width="14" height="${H}" fill="#b89b6a"/>
+  <rect x="${W-14}" y="0" width="14" height="${H}" fill="#b89b6a"/>
 
-  <!-- Gold corner marks -->
-  <line x1="36"       y1="36"       x2="100"      y2="36"       stroke="#b89b6a" stroke-width="1.5"/>
-  <line x1="36"       y1="36"       x2="36"       y2="100"      stroke="#b89b6a" stroke-width="1.5"/>
-  <line x1="${W-36}"  y1="36"       x2="${W-100}"  y2="36"       stroke="#b89b6a" stroke-width="1.5"/>
-  <line x1="${W-36}"  y1="36"       x2="${W-36}"   y2="100"      stroke="#b89b6a" stroke-width="1.5"/>
-  <line x1="36"       y1="${H-36}"  x2="100"      y2="${H-36}"  stroke="#b89b6a" stroke-width="1.5"/>
-  <line x1="36"       y1="${H-36}"  x2="36"       y2="${H-100}" stroke="#b89b6a" stroke-width="1.5"/>
-  <line x1="${W-36}"  y1="${H-36}"  x2="${W-100}"  y2="${H-36}"  stroke="#b89b6a" stroke-width="1.5"/>
-  <line x1="${W-36}"  y1="${H-36}"  x2="${W-36}"   y2="${H-100}" stroke="#b89b6a" stroke-width="1.5"/>
+  <!-- Inner hairline border -->
+  <rect x="26" y="26" width="${W-52}" height="${H-52}"
+        fill="none" stroke="#b89b6a" stroke-width="0.8" opacity="0.45"/>
 
-  <!-- Location -->
-  <text x="${W/2}" y="112" font-family="Georgia,serif" font-size="13" fill="#555" text-anchor="middle" letter-spacing="6">SALT LAKE CITY · UTAH</text>
-  <line x1="490" y1="132" x2="710" y2="132" stroke="#252525" stroke-width="1"/>
+  <!-- ── LEFT PANEL: Scissors icon ──────────────────────────── -->
+  <!-- Vertical gold divider -->
+  <rect x="440" y="60" width="1.5" height="${H-120}" fill="#b89b6a" opacity="0.4"/>
 
-  <!-- Wordmark -->
-  <text x="${W/2}" y="284" font-family="Georgia,'Times New Roman',serif" font-size="108" fill="#fff" text-anchor="middle" letter-spacing="16">CHALTU</text>
-  <text x="${W/2}" y="362" font-family="Georgia,'Times New Roman',serif" font-size="54"  fill="#fff" text-anchor="middle" letter-spacing="28">&amp; CO</text>
+  <!-- Scissors centered in left panel (x=227, y=315) -->
+  <g transform="translate(227,315)">
+    <!-- Upper blade -->
+    <line x1="-100" y1="-28" x2="105" y2="-5"
+          stroke="#b89b6a" stroke-width="8" stroke-linecap="round"/>
+    <!-- Lower blade -->
+    <line x1="-100" y1="28"  x2="105" y2="5"
+          stroke="#b89b6a" stroke-width="8" stroke-linecap="round"/>
+    <!-- Upper ring handle -->
+    <circle cx="-118" cy="-40" r="25"
+            fill="none" stroke="#b89b6a" stroke-width="7"/>
+    <!-- Lower ring handle -->
+    <circle cx="-118" cy="40" r="25"
+            fill="none" stroke="#b89b6a" stroke-width="7"/>
+    <!-- Pivot rivet -->
+    <circle cx="0" cy="0" r="8" fill="#b89b6a"/>
+    <!-- Small shine dot on pivot -->
+    <circle cx="-3" cy="-3" r="2.5" fill="#d4b98a"/>
+  </g>
 
-  <!-- Ornamental rule -->
-  <line x1="424"      y1="394" x2="${W/2-18}" y2="394" stroke="#b89b6a" stroke-width="1"/>
-  <polygon points="${W/2},383 ${W/2+8},394 ${W/2},405 ${W/2-8},394" fill="none" stroke="#b89b6a" stroke-width="1"/>
-  <line x1="${W/2+18}" y1="394" x2="776"      y2="394" stroke="#b89b6a" stroke-width="1"/>
+  <!-- SALON tag under scissors -->
+  <text x="227" y="420"
+    font-family="Arial,Helvetica,sans-serif"
+    font-size="13" font-weight="700"
+    fill="#b89b6a" text-anchor="middle" letter-spacing="5">
+    HAIR SALON
+  </text>
+  <text x="227" y="444"
+    font-family="Arial,Helvetica,sans-serif"
+    font-size="12" font-weight="400"
+    fill="#666666" text-anchor="middle" letter-spacing="3">
+    SALT LAKE CITY, UTAH
+  </text>
+
+  <!-- ── RIGHT PANEL: Name + identity ──────────────────────── -->
+
+  <!-- CHALTU'S — large serif name -->
+  <text x="820" y="230"
+    font-family="Georgia,'Times New Roman',serif"
+    font-size="115" font-weight="400"
+    fill="#ffffff" text-anchor="middle" letter-spacing="6">
+    CHALTU
+  </text>
+
+  <!-- Gold rule under name -->
+  <rect x="490" y="252" width="660" height="3" fill="#b89b6a"/>
+
+  <!-- LUXURY HAIR SALON — large gold, most prominent -->
+  <text x="820" y="320"
+    font-family="Arial,Helvetica,sans-serif"
+    font-size="42" font-weight="700"
+    fill="#b89b6a" text-anchor="middle" letter-spacing="8">
+    LUXURY HAIR SALON
+  </text>
 
   <!-- Tagline -->
-  <text x="${W/2}" y="446" font-family="Georgia,serif" font-size="22" font-style="italic" fill="#777" text-anchor="middle" letter-spacing="2">Expert Braiding &amp; Natural Hair Care</text>
+  <text x="820" y="390"
+    font-family="Arial,Helvetica,sans-serif"
+    font-size="20" font-weight="400"
+    fill="#777777" text-anchor="middle" letter-spacing="3">
+    EXPERT BRAIDING &amp; NATURAL HAIR CARE
+  </text>
 
-  <!-- Services -->
-  <text x="${W/2}" y="502" font-family="Arial,Helvetica,sans-serif" font-size="12" fill="#3d3d3d" text-anchor="middle" letter-spacing="3">BOX BRAIDS · KNOTLESS · CORNROWS · LOCS · SEW-IN · SILK PRESS</text>
+  <!-- Service dots -->
+  <text x="820" y="448"
+    font-family="Arial,Helvetica,sans-serif"
+    font-size="15" font-weight="400"
+    fill="#555555" text-anchor="middle" letter-spacing="2">
+    Box Braids  ·  Knotless  ·  Locs  ·  Cornrows  ·  Twists
+  </text>
 
-  <!-- URL -->
-  <text x="${W/2}" y="566" font-family="Arial,Helvetica,sans-serif" font-size="14" fill="#4a4a4a" text-anchor="middle" letter-spacing="3">chaltusalon.com</text>
+  <!-- URL bar at bottom -->
+  <rect x="0" y="${H-68}" width="${W}" height="54" fill="#0d0d0d"/>
+  <rect x="0" y="${H-68}" width="${W}" height="2"  fill="#b89b6a"/>
+  <text x="${W/2}" y="${H-32}"
+    font-family="Arial,Helvetica,sans-serif"
+    font-size="19" font-weight="700"
+    fill="#b89b6a" text-anchor="middle" letter-spacing="5">
+    CHALTUSALON.COM
+  </text>
 </svg>`.trim();
 
 /* ── Favicon SVG (square) ────────────────────────────────────────────────── */
