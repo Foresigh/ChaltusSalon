@@ -1664,12 +1664,15 @@ p  { font-size: 1rem; }
   font-size: 0.78rem;
   color: var(--gray-600);
 }
+.footer-bottom__right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.3rem;
+}
 .footer-built {
-  width: 100%;
-  text-align: center;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   color: var(--gray-700);
-  padding-top: var(--s2);
 }
 .footer-built a {
   color: var(--gray-500);

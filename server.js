@@ -769,6 +769,10 @@ app.get('/api/subscribers', auth, async (_req, res) => {
   }
 });
 
+// ── Static legal pages ─────────────────────────────────────────────────────────
+app.get('/privacy', (_req, res) => res.sendFile(path.join(__dirname, 'privacy.html')));
+app.get('/terms',   (_req, res) => res.sendFile(path.join(__dirname, 'terms.html')));
+
 // ── SPA fallback ───────────────────────────────────────────────────────────────
 app.get('*', (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
