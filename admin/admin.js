@@ -642,6 +642,51 @@ $('#pw-form').addEventListener('submit', async e => {
   if (res.ok) $('#pw-form').reset();
 });
 
+// ── Square Setup ───────────────────────────────────────────────────────────────
+(function initSquareSetup() {
+  const SQ_KEY = 'sq_config';
+  const saved = JSON.parse(localStorage.getItem(SQ_KEY) || '{}');
+
+  if (saved.appId)      { $('#sq-app-id').value      = saved.appId; }
+  if (saved.locationId) { $('#sq-location-id').value = saved.locationId; }
+  if (saved.env)        { $('#sq-env').value          = saved.env; }
+
+  function updateBadge(active) {
+    const badge = $('#sq-status-badge');
+    if (active) {
+      badge.textContent = '✓ Configured';
+      badge.className = 'setup-badge setup-badge--active';
+    } else {
+      badge.textContent = 'Not configured';
+      badge.className = 'setup-badge setup-badge--pending';
+    }
+  }
+
+  updateBadge(saved.appId && saved.locationId);
+
+  $('#sq-save-btn').addEventListener('click', () => {
+    const msg        = $('#sq-save-msg');
+    const appId      = $('#sq-app-id').value.trim();
+    const locationId = $('#sq-location-id').value.trim();
+    const env        = $('#sq-env').value;
+
+    msg.hidden = true;
+
+    if (!appId || !locationId) {
+      msg.className = 'alert alert--error';
+      msg.textContent = 'Please fill in both Application ID and Location ID.';
+      msg.hidden = false;
+      return;
+    }
+
+    localStorage.setItem(SQ_KEY, JSON.stringify({ appId, locationId, env }));
+    updateBadge(true);
+    msg.className = 'alert alert--success';
+    msg.textContent = '✓ Square credentials saved. Add SQUARE_ACCESS_TOKEN to Railway to complete setup.';
+    msg.hidden = false;
+  });
+})();
+
 // ── Boot ───────────────────────────────────────────────────────────────────────
 function bootApp() {
   $('#login-screen').hidden = true;

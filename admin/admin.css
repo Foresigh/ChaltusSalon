@@ -476,3 +476,126 @@ textarea { resize: vertical; }
 .modal-detail-row { display:flex; gap:1rem; align-items:baseline; font-size:.9rem; }
 .modal-detail-key { min-width:70px; color:var(--gray-400); font-size:.78rem; text-transform:uppercase; letter-spacing:.04em; flex-shrink:0; }
 .modal-detail-val { color:var(--gray-800); } .modal-detail-val a { color:var(--black); text-decoration:underline; }
+
+/* ── Square Setup Card ─────────────────────────────────────── */
+.setup-card { margin-top: 1.5rem; }
+
+.setup-card__head {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.setup-card__icon {
+  width: 40px; height: 40px;
+  background: var(--black);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--white);
+  flex-shrink: 0;
+}
+
+.setup-card__head h2 { font-size: 1rem; font-weight: 600; margin: 0; }
+.setup-card__sub { font-size: 0.78rem; color: var(--gray-400); margin: 0.15rem 0 0; }
+
+.setup-badge {
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: 20px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.setup-badge--pending  { background: #fef9ee; color: #92650a; border: 1px solid #f6d77a; }
+.setup-badge--active   { background: #f0fdf4; color: #1a6b3c; border: 1px solid #86efac; }
+
+.field-hint {
+  display: block;
+  font-size: 0.71rem;
+  color: var(--gray-400);
+  font-weight: 400;
+  margin-top: 1px;
+}
+
+.field-hint code {
+  background: var(--gray-100);
+  padding: 0 3px;
+  border-radius: 3px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.7rem;
+}
+
+/* Step-by-step instructions */
+.setup-instructions {
+  margin-top: 1.75rem;
+  border-top: 1px solid var(--gray-100);
+  padding-top: 1.5rem;
+}
+
+.setup-instructions__title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 1.25rem;
+}
+
+.setup-steps {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.setup-steps li {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+}
+
+.setup-step__num {
+  width: 24px; height: 24px;
+  background: var(--black);
+  color: var(--white);
+  border-radius: 50%;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.setup-steps li > div { flex: 1; }
+.setup-steps strong { font-size: 0.875rem; color: var(--gray-800); display: block; margin-bottom: 0.2rem; }
+.setup-steps p { font-size: 0.82rem; color: var(--gray-500); line-height: 1.55; margin: 0; }
+.setup-steps a { color: var(--black); text-decoration: underline; }
+.setup-steps em { font-style: italic; color: var(--gray-700); }
+.setup-steps code {
+  background: var(--gray-100);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+.setup-note {
+  margin-top: 1.25rem;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #78510a;
+  line-height: 1.5;
+}
+
+.setup-note svg { flex-shrink: 0; margin-top: 1px; color: #b45309; }
