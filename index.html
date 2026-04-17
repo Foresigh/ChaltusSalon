@@ -866,10 +866,54 @@
               <div id="booking-error"   class="bk-alert bk-alert--error"   hidden></div>
               <div id="booking-success" class="bk-alert bk-alert--success" hidden></div>
 
+              <!-- Deposit payment section -->
+              <div class="bk-deposit" id="bk-deposit">
+                <div class="bk-deposit__head">
+                  <div class="bk-deposit__icon">💳</div>
+                  <div>
+                    <p class="bk-deposit__title">Secure your appointment</p>
+                    <p class="bk-deposit__sub">A $30 deposit is required to confirm your booking. Remainder due at appointment.</p>
+                  </div>
+                </div>
+                <div class="bk-deposit__fields">
+                  <div class="bk-field bk-field--full">
+                    <label>Card Number</label>
+                    <div class="bk-card-input" id="sq-card-number">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+                      <span class="bk-card-input__placeholder">Card number</span>
+                    </div>
+                  </div>
+                  <div class="bk-grid bk-grid--2">
+                    <div class="bk-field">
+                      <label>Expiry</label>
+                      <div class="bk-card-input" id="sq-expiry">
+                        <span class="bk-card-input__placeholder">MM / YY</span>
+                      </div>
+                    </div>
+                    <div class="bk-field">
+                      <label>CVV</label>
+                      <div class="bk-card-input" id="sq-cvv">
+                        <span class="bk-card-input__placeholder">CVV</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="bk-field bk-field--full">
+                    <label>ZIP Code</label>
+                    <div class="bk-card-input" id="sq-postal">
+                      <span class="bk-card-input__placeholder">ZIP</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="bk-deposit__secure">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
+                  Payments secured by Square · 256-bit SSL encryption
+                </div>
+              </div>
+
               <button type="button" id="booking-submit" class="bk-submit-btn">
-                Request Appointment →
+                Pay $30 Deposit &amp; Request Appointment →
               </button>
-              <p class="bk-note">We'll confirm via phone or email · No credit card needed</p>
+              <p class="bk-note">Deposit is non-refundable within 24 hours of appointment</p>
             </div>
 
           </div>
