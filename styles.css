@@ -372,6 +372,17 @@ p  { font-size: 1rem; }
 
 .hero__ctas { display: flex; flex-wrap: wrap; gap: var(--s4); }
 
+.hero__cta-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .hero__cta-btn { width: 200px; }
+}
+
 .hero__scroll {
   position: absolute;
   bottom: var(--s8);
