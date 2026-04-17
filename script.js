@@ -732,7 +732,84 @@
     loadStylistDropdown();
   }());
 
-  // Global: called by stylist card "Book with" buttons
+  /* ── Email capture widget ─────────────────────────────────────────────── */
+  (function () {
+    var STORAGE_KEY = 'ec_dismissed';
+    var widget   = document.getElementById('email-capture');
+    var closeBtn = document.getElementById('email-capture-close');
+    var form     = document.getElementById('email-capture-form');
+    var success  = document.getElementById('ec-success');
+    var errEl    = document.getElementById('ec-error');
+    if (!widget) return;
+
+    // Don't show if already dismissed or subscribed
+    if (localStorage.getItem(STORAGE_KEY)) return;
+
+    function showWidget() {
+      widget.hidden = false;
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () { widget.classList.add('is-visible'); });
+      });
+    }
+
+    function hideWidget() {
+      widget.classList.remove('is-visible');
+      setTimeout(function () { widget.hidden = true; }, 350);
+    }
+
+    // Trigger: 25s on desktop, 35s on mobile, OR after scrolling 55% of page
+    var shown = false;
+    function maybeShow() {
+      if (shown) return;
+      shown = true;
+      showWidget();
+    }
+
+    var delay = window.innerWidth >= 768 ? 25000 : 35000;
+    var timer = setTimeout(maybeShow, delay);
+
+    window.addEventListener('scroll', function () {
+      if (shown) return;
+      var scrolled = window.scrollY / (document.body.scrollHeight - window.innerHeight);
+      if (scrolled > 0.55) maybeShow();
+    }, { passive: true });
+
+    closeBtn.addEventListener('click', function () {
+      localStorage.setItem(STORAGE_KEY, '1');
+      hideWidget();
+      clearTimeout(timer);
+    });
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      errEl.hidden = true;
+      var email = (document.getElementById('ec-email').value || '').trim();
+      var name  = (document.getElementById('ec-name').value  || '').trim();
+      if (!email) { errEl.textContent = 'Please enter your email.'; errEl.hidden = false; return; }
+      var submitBtn = form.querySelector('button[type="submit"]');
+      submitBtn.textContent = 'Saving…';
+      submitBtn.disabled = true;
+      try {
+        var res = await fetch('/api/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email, name: name }),
+        });
+        var data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error');
+        form.hidden = true;
+        success.hidden = false;
+        localStorage.setItem(STORAGE_KEY, '1');
+        setTimeout(hideWidget, 3000);
+      } catch (err) {
+        errEl.textContent = err.message;
+        errEl.hidden = false;
+        submitBtn.textContent = 'Notify Me';
+        submitBtn.disabled = false;
+      }
+    });
+  }());
+
   // Hide mobile pill when booking section is visible (user is already in the form)
   var mobilePill = document.getElementById('mobile-cta-bar');
   var bookingEl  = document.getElementById('booking');

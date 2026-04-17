@@ -25,6 +25,15 @@ async function initDB() {
       value TEXT NOT NULL DEFAULT ''
     )
   `).catch(e => console.warn('migration settings:', e.message));
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS subscribers (
+      id         SERIAL PRIMARY KEY,
+      email      TEXT NOT NULL UNIQUE,
+      name       TEXT DEFAULT '',
+      source     TEXT DEFAULT 'website',
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `).catch(e => console.warn('migration subscribers:', e.message));
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (

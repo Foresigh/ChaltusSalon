@@ -709,6 +709,66 @@ app.post('/api/charge', async (req, res) => {
   }
 });
 
+// ── Email capture ──────────────────────────────────────────────────────────────
+app.post('/api/subscribe', async (req, res) => {
+  const email = (req.body.email || '').trim().toLowerCase();
+  const name  = (req.body.name  || '').trim();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ error: 'Please enter a valid email address.' });
+  }
+  try {
+    const result = await pool.query(
+      `INSERT INTO subscribers (email, name, source)
+       VALUES ($1, $2, 'website')
+       ON CONFLICT (email) DO NOTHING
+       RETURNING id`,
+      [email, name]
+    );
+    const isNew = result.rows.length > 0;
+    if (isNew && resend) {
+      resend.emails.send({
+        from: `Chaltu's Salon <${FROM_ADDRESS}>`,
+        to: email,
+        subject: "You're on the list — Chaltu's Salon",
+        html: `
+          <div style="font-family:Georgia,serif;max-width:520px;margin:0 auto;color:#111;">
+            <div style="background:#111;padding:32px;text-align:center;">
+              <h1 style="color:#b89b6a;font-size:28px;letter-spacing:4px;margin:0;">CHALTU'S SALON</h1>
+              <p style="color:#888;font-size:12px;letter-spacing:2px;margin:8px 0 0;">SALT LAKE CITY, UTAH</p>
+            </div>
+            <div style="padding:32px;">
+              <p style="font-size:18px;margin:0 0 16px;">Hi${name ? ' ' + name : ''},</p>
+              <p style="color:#444;line-height:1.7;">Thanks for your interest in Chaltu's Salon. We'll keep you in the loop on availability, new services, and special offers.</p>
+              <p style="color:#444;line-height:1.7;">When you're ready to book, we'd love to have you in the chair.</p>
+              <div style="text-align:center;margin:32px 0;">
+                <a href="https://www.chaltusalon.com/#booking"
+                   style="background:#111;color:#fff;padding:14px 32px;text-decoration:none;font-size:13px;letter-spacing:2px;display:inline-block;">
+                  BOOK AN APPOINTMENT
+                </a>
+              </div>
+              <p style="color:#888;font-size:12px;">1524 S State St · Salt Lake City, UT · (801) 376-3976</p>
+            </div>
+          </div>`,
+      }).catch(() => {});
+    }
+    res.json({ ok: true, new: isNew });
+  } catch (e) {
+    console.error('subscribe error:', e.message);
+    res.status(500).json({ error: 'Could not save your email. Please try again.' });
+  }
+});
+
+app.get('/api/subscribers', auth, async (_req, res) => {
+  try {
+    const { rows } = await pool.query(
+      'SELECT id, email, name, source, created_at FROM subscribers ORDER BY created_at DESC'
+    );
+    res.json(rows);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ── SPA fallback ───────────────────────────────────────────────────────────────
 app.get('*', (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 

@@ -1018,6 +1018,23 @@
     </a>
   </div>
 
+  <!-- Email capture widget -->
+  <div class="email-capture" id="email-capture" hidden aria-live="polite">
+    <button class="email-capture__close" id="email-capture-close" aria-label="Dismiss">&times;</button>
+    <div class="email-capture__icon" aria-hidden="true">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#b89b6a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+    </div>
+    <p class="email-capture__heading">Stay in the loop</p>
+    <p class="email-capture__sub">Get notified about openings &amp; new services.</p>
+    <form class="email-capture__form" id="email-capture-form" novalidate>
+      <input type="text"  id="ec-name"  placeholder="Your name (optional)" autocomplete="name" />
+      <input type="email" id="ec-email" placeholder="Your email address"    autocomplete="email" required />
+      <button type="submit" class="btn btn-primary">Notify Me</button>
+    </form>
+    <p class="email-capture__success" id="ec-success" hidden>Thanks! We'll keep you posted.</p>
+    <p class="email-capture__error"   id="ec-error"   hidden></p>
+  </div>
+
   <script src="script.js" defer></script>
 </body>
 </html>

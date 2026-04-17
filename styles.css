@@ -1660,6 +1660,92 @@ img[loading="lazy"] { content-visibility: auto; }
 /* Focus styles for accessibility */
 :focus-visible { outline: 2px solid var(--white); outline-offset: 3px; }
 
+/* ── Email capture widget ────────────────────────────────────────────────── */
+.email-capture {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 1100;
+  width: 320px;
+  background: var(--white);
+  border-radius: 12px;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.18);
+  padding: 1.5rem;
+  border-top: 3px solid #b89b6a;
+  transform: translateY(20px);
+  opacity: 0;
+  transition: transform 0.35s ease, opacity 0.35s ease;
+}
+.email-capture.is-visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+.email-capture__close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.85rem;
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: var(--gray-400);
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+}
+.email-capture__close:hover { color: var(--gray-900); }
+.email-capture__icon { margin-bottom: 0.75rem; }
+.email-capture__heading {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  margin: 0 0 0.35rem;
+  color: var(--gray-900);
+}
+.email-capture__sub {
+  font-size: 0.82rem;
+  color: var(--gray-500);
+  margin: 0 0 1rem;
+  line-height: 1.5;
+}
+.email-capture__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.email-capture__form input {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-family: var(--font-sans);
+  color: var(--gray-900);
+  background: var(--white);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color var(--t-base);
+}
+.email-capture__form input:focus { border-color: var(--gray-700); }
+.email-capture__form .btn { width: 100%; margin-top: 0.25rem; }
+.email-capture__success {
+  font-size: 0.85rem;
+  color: #2e7d32;
+  margin: 0.75rem 0 0;
+  text-align: center;
+}
+.email-capture__error {
+  font-size: 0.82rem;
+  color: #c0392b;
+  margin: 0.5rem 0 0;
+}
+@media (max-width: 767px) {
+  .email-capture {
+    left: 1rem;
+    right: 1rem;
+    width: auto;
+    bottom: calc(5rem + env(safe-area-inset-bottom));
+  }
+}
+
 /* ── Mobile sticky CTA bar ───────────────────────────────────────────────── */
 .mobile-cta-bar {
   display: none;

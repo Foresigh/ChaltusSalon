@@ -87,17 +87,18 @@ $('#login-form').addEventListener('submit', async e => {
 $('#logout-btn').addEventListener('click', logout);
 
 // ── Tab navigation ─────────────────────────────────────────────────────────────
-const TAB_TITLES = { dashboard: 'Dashboard', bookings: 'Bookings', gallery: 'Gallery', stylists: 'Stylists', services: 'Services', settings: 'Settings' };
+const TAB_TITLES = { dashboard: 'Dashboard', bookings: 'Bookings', gallery: 'Gallery', stylists: 'Stylists', services: 'Services', subscribers: 'Subscribers', settings: 'Settings' };
 
 function switchTab(tab) {
   $$('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.tab === tab));
   $$('.panel').forEach(el => el.classList.toggle('active', el.dataset.panel === tab));
   $('#page-title').textContent = TAB_TITLES[tab] ?? tab;
-  if (tab === 'dashboard') loadDashboard();
-  if (tab === 'bookings')  loadBookings();
-  if (tab === 'gallery')   loadGallery();
-  if (tab === 'stylists')  loadStylists();
-  if (tab === 'services')  loadServices();
+  if (tab === 'dashboard')   loadDashboard();
+  if (tab === 'bookings')    loadBookings();
+  if (tab === 'gallery')     loadGallery();
+  if (tab === 'stylists')    loadStylists();
+  if (tab === 'services')    loadServices();
+  if (tab === 'subscribers') loadSubscribers();
   // close mobile sidebar
   $('#sidebar').classList.remove('open');
 }
@@ -641,6 +642,51 @@ $('#pw-form').addEventListener('submit', async e => {
   msg.hidden = false;
   if (res.ok) $('#pw-form').reset();
 });
+
+// ── Subscribers ────────────────────────────────────────────────────────────────
+async function loadSubscribers() {
+  const tbody = $('#sub-tbody');
+  const count = $('#sub-count');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--gray-400);padding:2rem;">Loading…</td></tr>';
+
+  const data = await apiFetch('/api/subscribers');
+  if (!data) return;
+
+  const badge = $('#subscribers-badge');
+  if (badge) { badge.textContent = data.length; badge.hidden = data.length === 0; }
+  if (count) count.textContent = `(${data.length})`;
+
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--gray-400);padding:2rem;">No subscribers yet.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = data.map(s => {
+    const d = new Date(s.created_at);
+    const date = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    return `<tr>
+      <td><a href="mailto:${s.email}" style="color:inherit;">${s.email}</a></td>
+      <td>${s.name || '<span style="color:var(--gray-400)">—</span>'}</td>
+      <td style="text-transform:capitalize;">${s.source || 'website'}</td>
+      <td style="color:var(--gray-400);white-space:nowrap;">${date}</td>
+    </tr>`;
+  }).join('');
+
+  // CSV export
+  const exportBtn = $('#sub-export-btn');
+  if (exportBtn) {
+    exportBtn.onclick = function () {
+      const rows = [['Email', 'Name', 'Source', 'Signed Up']];
+      data.forEach(s => rows.push([s.email, s.name || '', s.source || 'website', new Date(s.created_at).toISOString().slice(0,10)]));
+      const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+      a.download = 'subscribers.csv';
+      a.click();
+    };
+  }
+}
 
 // ── Boot ───────────────────────────────────────────────────────────────────────
 function bootApp() {
