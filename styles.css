@@ -1664,6 +1664,19 @@ p  { font-size: 1rem; }
   font-size: 0.78rem;
   color: var(--gray-600);
 }
+.footer-built {
+  width: 100%;
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--gray-700);
+  padding-top: var(--s2);
+}
+.footer-built a {
+  color: var(--gray-500);
+  text-decoration: none;
+  transition: color var(--t-fast);
+}
+.footer-built a:hover { color: var(--white); }
 
 /* ================================================================
    SECTION-LEVEL REPEATING CTA STRIP
