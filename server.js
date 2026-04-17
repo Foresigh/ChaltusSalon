@@ -668,7 +668,7 @@ app.get('/api/sq-config', (_req, res) => {
 app.post('/api/charge', async (req, res) => {
   if (!SQUARE_TOKEN) return res.status(503).json({ error: 'Payments are not configured yet.' });
 
-  const { sourceId, booking } = req.body;
+  const { sourceId, cardName = '', booking } = req.body;
   const {
     client_name, client_email = '', client_phone, service_name,
     stylist_name = 'Any stylist', preferred_date, preferred_time, message = '',
@@ -688,7 +688,7 @@ app.post('/api/charge', async (req, res) => {
       idempotencyKey: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
       amountMoney:    { amount: BigInt(3000), currency: 'USD' },
       locationId:     SQUARE_LOC_ID,
-      note:           `$30 deposit — ${service_name} for ${client_name}`,
+      note:           `$30 deposit — ${service_name} for ${client_name}${cardName ? ' (card: ' + cardName + ')' : ''}`,
     });
 
     const paymentId = response.payment.id;

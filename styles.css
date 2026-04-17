@@ -1384,71 +1384,43 @@ p  { font-size: 1rem; }
 
 /* ---- Deposit payment block ---- */
 .bk-deposit {
-  border: 1.5px solid var(--gray-200);
-  border-radius: 10px;
-  overflow: hidden;
-  background: var(--white);
-}
-
-.bk-deposit__head {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.85rem;
-  padding: 1rem 1.1rem;
-  background: var(--gray-50);
-  border-bottom: 1px solid var(--gray-200);
-}
-
-.bk-deposit__icon {
-  font-size: 1.6rem;
-  line-height: 1;
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-
-.bk-deposit__title {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--black);
-  margin: 0 0 0.2rem;
-}
-
-.bk-deposit__sub {
-  font-size: 0.75rem;
-  color: var(--gray-500);
-  margin: 0;
-  line-height: 1.45;
-}
-
-.bk-deposit__fields {
-  padding: 1rem 1.1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 1.25rem;
+  padding-top: 0.25rem;
 }
 
-/* Square card container */
-#card-container {
-  min-height: 90px;
-}
-
-.bk-deposit__secure {
+.bk-deposit__divider {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  padding: 0.55rem 1rem;
-  background: #f0faf4;
-  border-top: 1px solid #c6e8d4;
+  gap: 0.5rem;
   font-size: 0.7rem;
-  color: #2d7a4f;
-  font-weight: 500;
-  letter-spacing: 0.01em;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gray-500);
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--gray-100);
 }
 
-.bk-deposit__secure svg {
-  color: #2d7a4f;
+.bk-deposit__divider svg {
+  color: var(--gray-400);
   flex-shrink: 0;
+}
+
+/* Square card container — sits inside a .bk-field like any other input */
+#card-container {
+  border: 1.5px solid var(--gray-200);
+  border-radius: 6px;
+  min-height: 48px;
+  background: var(--white);
+  transition: border-color var(--t-base);
+}
+
+.bk-deposit__note {
+  font-size: 0.72rem;
+  color: var(--gray-400);
+  margin: -0.5rem 0 0;
 }
 
 .bk-submit-btn {

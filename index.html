@@ -868,20 +868,19 @@
 
               <!-- Deposit payment section -->
               <div class="bk-deposit" id="bk-deposit">
-                <div class="bk-deposit__head">
-                  <div class="bk-deposit__icon">💳</div>
-                  <div>
-                    <p class="bk-deposit__title">Secure your appointment</p>
-                    <p class="bk-deposit__sub">A $30 deposit is required to confirm your booking. Remainder due at appointment.</p>
-                  </div>
+                <div class="bk-deposit__divider">
+                  <span>Secure Payment · $30 Deposit</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
                 </div>
-                <div class="bk-deposit__fields">
+                <div class="bk-field bk-field--full">
+                  <label for="sq-name">Name on Card</label>
+                  <input type="text" id="sq-name" placeholder="As it appears on your card" autocomplete="cc-name" />
+                </div>
+                <div class="bk-field bk-field--full">
+                  <label>Card Details</label>
                   <div id="card-container"></div>
                 </div>
-                <div class="bk-deposit__secure">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
-                  Payments secured by Square · 256-bit SSL encryption
-                </div>
+                <p class="bk-deposit__note">$30 held now · Remainder due at appointment</p>
               </div>
 
               <button type="button" id="booking-submit" class="bk-submit-btn">

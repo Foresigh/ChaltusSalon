@@ -569,6 +569,8 @@
 
       if (sqReady && sqCard) {
         /* ── Payment flow ── */
+        var cardName = (document.getElementById('sq-name').value || '').trim();
+        if (!cardName) { showErr('Please enter the name on your card.'); return; }
         submitBtn.textContent = 'Processing payment…';
         try {
           var tokenResult = await sqCard.tokenize();
@@ -582,7 +584,7 @@
           var chargeRes  = await fetch('/api/charge', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ sourceId: tokenResult.token, booking: bookingData }),
+            body:    JSON.stringify({ sourceId: tokenResult.token, cardName: cardName, booking: bookingData }),
           });
           var chargeData = await chargeRes.json();
           if (!chargeRes.ok) throw new Error(chargeData.error || 'Payment failed.');
