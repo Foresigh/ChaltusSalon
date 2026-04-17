@@ -343,7 +343,7 @@
         }), 10000);
         console.log('Square: card created, attaching…');
 
-        await withTimeout(sqCard.attach('#card-container'), 10000);
+        sqCard.attach('#card-container'); // renders synchronously, promise may not resolve
         if (sqLoadingEl) sqLoadingEl.hidden = true;
         sqReady = true;
         console.log('✔ Square card form ready');
