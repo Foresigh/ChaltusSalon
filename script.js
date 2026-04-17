@@ -307,17 +307,7 @@
       });
     }
 
-    var sqCardNumber = null;
-
-    function attachField(field, id) {
-      var el = document.getElementById(id);
-      if (!el) return;
-      field.attach('#' + id);
-      field.addEventListener('focusClassAdded',  function () { el.classList.add('sq-focus'); });
-      field.addEventListener('focusClassRemoved', function () { el.classList.remove('sq-focus'); });
-      field.addEventListener('errorClassAdded',   function () { el.classList.add('sq-error'); });
-      field.addEventListener('errorClassRemoved', function () { el.classList.remove('sq-error'); });
-    }
+    var sqCard = null;
 
     async function initSquare(cfg) {
       try {
@@ -327,26 +317,15 @@
         await loadSquareScript(sdkUrl);
 
         var payments = window.Square.payments(cfg.appId, cfg.locationId);
-
-        var fieldStyle = {
-          '.input-container': { borderColor: 'transparent', borderRadius: '0' },
-          input: { fontSize: '14px', color: '#141414', padding: '0 12px' },
-          'input::placeholder': { color: '#8f8f8f' },
-        };
-
-        var results = await Promise.all([
-          payments.cardNumber({ style: fieldStyle }),
-          payments.expirationDate({ style: fieldStyle }),
-          payments.cvv({ style: fieldStyle }),
-          payments.postalCode({ style: fieldStyle }),
-        ]);
-
-        sqCardNumber = results[0];
-        attachField(results[0], 'sq-card-number');
-        attachField(results[1], 'sq-expiry');
-        attachField(results[2], 'sq-cvv');
-        attachField(results[3], 'sq-postal');
-
+        sqCard = await payments.card({
+          style: {
+            '.input-container': { borderColor: '#d4d4d4', borderRadius: '6px' },
+            '.input-container.is-focus': { borderColor: '#0a0a0a' },
+            '.input-container.is-error':  { borderColor: '#c0392b' },
+            input: { fontSize: '14px', color: '#141414' },
+          },
+        });
+        sqCard.attach('#card-container');
         sqReady = true;
       } catch (e) {
         console.error('Square init failed:', e.message);
@@ -592,7 +571,7 @@
         /* ── Payment flow ── */
         submitBtn.textContent = 'Processing payment…';
         try {
-          var tokenResult = await sqCardNumber.tokenize();
+          var tokenResult = await sqCard.tokenize();
           if (tokenResult.status !== 'OK') {
             var cardErr = tokenResult.errors
               ? tokenResult.errors.map(function (e) { return e.message; }).join(', ')
