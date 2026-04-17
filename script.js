@@ -293,6 +293,80 @@
 
     var state = { date: '', time: '' };
 
+    /* ---- Square payment init ---- */
+    var sqCard   = null;
+    var sqReady  = false;
+    var sqEnabled = false;
+
+    var cardContainer = document.getElementById('card-container');
+    var sqLoadingEl   = document.getElementById('sq-loading');
+
+    function loadSquareScript(src) {
+      return new Promise(function (resolve, reject) {
+        var s = document.createElement('script');
+        s.src = src;
+        s.onload = resolve;
+        s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+
+    async function initSquare(cfg) {
+      try {
+        var sdkUrl = cfg.env === 'production'
+          ? 'https://web.squarecdn.com/v1/square.js'
+          : 'https://sandbox.web.squarecdn.com/v1/square.js';
+        await loadSquareScript(sdkUrl);
+
+        var payments = window.Square.payments(cfg.appId, cfg.locationId);
+        sqCard = await payments.card({
+          style: {
+            '.input-container': {
+              borderColor:  '#d4d4d4',
+              borderRadius: '6px',
+            },
+            '.input-container.is-focus': { borderColor: '#0a0a0a' },
+            '.input-container.is-error':  { borderColor: '#c0392b' },
+            input: { fontSize: '14px', color: '#141414', fontFamily: 'Inter, sans-serif' },
+            'input::placeholder': { color: '#8f8f8f' },
+          },
+        });
+        await sqCard.attach('#card-container');
+        if (sqLoadingEl) sqLoadingEl.hidden = true;
+        sqReady = true;
+        console.log('✔ Square card form ready');
+      } catch (e) {
+        console.warn('Square init failed:', e);
+        if (sqLoadingEl) sqLoadingEl.hidden = true;
+        // Fall back: hide deposit block, let them book without payment
+        var depositEl = document.getElementById('bk-deposit');
+        if (depositEl) depositEl.hidden = true;
+        submitBtn.textContent = 'Request Appointment →';
+      }
+    }
+
+    // Fetch config and init Square if enabled
+    fetch('/api/sq-config')
+      .then(function (r) { return r.json(); })
+      .then(function (cfg) {
+        sqEnabled = cfg.enabled;
+        if (cfg.enabled) {
+          initSquare(cfg);
+        } else {
+          // Payments not configured — hide deposit UI
+          var depositEl = document.getElementById('bk-deposit');
+          if (depositEl) depositEl.hidden = true;
+          if (sqLoadingEl) sqLoadingEl.hidden = true;
+          submitBtn.textContent = 'Request Appointment →';
+        }
+      })
+      .catch(function () {
+        var depositEl = document.getElementById('bk-deposit');
+        if (depositEl) depositEl.hidden = true;
+        if (sqLoadingEl) sqLoadingEl.hidden = true;
+        submitBtn.textContent = 'Request Appointment →';
+      });
+
     var SLOT_GROUPS = [
       { label: 'Morning',   slots: ['10:00 AM','10:30 AM','11:00 AM','11:30 AM'] },
       { label: 'Afternoon', slots: ['12:00 PM','12:30 PM','1:00 PM','1:30 PM','2:00 PM','2:30 PM','3:00 PM','3:30 PM'] },
@@ -490,34 +564,68 @@
       if (!phone)       { showErr('Please enter your phone number.'); return; }
 
       errEl.hidden = true; okEl.hidden = true;
-      submitBtn.textContent = 'Sending…';
       submitBtn.disabled = true;
 
-      try {
-        var res = await fetch('/api/bookings', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            client_name:    name,
-            client_phone:   phone,
-            client_email:   (document.getElementById('b-email').value   || '').trim(),
-            service_name:   service,
-            stylist_name:   document.getElementById('b-stylist').value  || 'Any stylist',
-            preferred_date: state.date,
-            preferred_time: state.time,
-            message:        (document.getElementById('b-message').value || '').trim()
-          })
-        });
-        var data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Something went wrong.');
-        okEl.textContent = '✓ ' + data.message;
-        okEl.hidden = false;
-        submitBtn.textContent = 'Request Sent ✓';
-      } catch (err) {
-        errEl.textContent = err.message;
-        errEl.hidden = false;
-        submitBtn.textContent = 'Request Appointment →';
-        submitBtn.disabled = false;
+      var bookingData = {
+        client_name:    name,
+        client_phone:   phone,
+        client_email:   (document.getElementById('b-email').value   || '').trim(),
+        service_name:   service,
+        stylist_name:   document.getElementById('b-stylist').value  || 'Any stylist',
+        preferred_date: state.date,
+        preferred_time: state.time,
+        message:        (document.getElementById('b-message').value || '').trim(),
+      };
+
+      if (sqReady && sqCard) {
+        /* ── Payment flow ── */
+        submitBtn.textContent = 'Processing payment…';
+        try {
+          var tokenResult = await sqCard.tokenize();
+          if (tokenResult.status !== 'OK') {
+            var cardErr = tokenResult.errors
+              ? tokenResult.errors.map(function (e) { return e.message; }).join(', ')
+              : 'Card error — please check your details.';
+            throw new Error(cardErr);
+          }
+
+          var chargeRes  = await fetch('/api/charge', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ sourceId: tokenResult.token, booking: bookingData }),
+          });
+          var chargeData = await chargeRes.json();
+          if (!chargeRes.ok) throw new Error(chargeData.error || 'Payment failed.');
+
+          okEl.textContent = '✓ $30 deposit received! Your appointment is requested — we\'ll confirm within 24 hours.';
+          okEl.hidden = false;
+          submitBtn.textContent = 'Deposit Paid ✓';
+        } catch (err) {
+          errEl.textContent = err.message;
+          errEl.hidden = false;
+          submitBtn.textContent = 'Pay $30 Deposit & Request Appointment →';
+          submitBtn.disabled = false;
+        }
+      } else {
+        /* ── No payment configured — direct booking ── */
+        submitBtn.textContent = 'Sending…';
+        try {
+          var res  = await fetch('/api/bookings', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify(bookingData),
+          });
+          var data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+          okEl.textContent = '✓ ' + data.message;
+          okEl.hidden = false;
+          submitBtn.textContent = 'Request Sent ✓';
+        } catch (err) {
+          errEl.textContent = err.message;
+          errEl.hidden = false;
+          submitBtn.textContent = 'Request Appointment →';
+          submitBtn.disabled = false;
+        }
       }
     });
 

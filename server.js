@@ -14,6 +14,7 @@ const cors       = require('cors');
 const cloudinary = require('cloudinary').v2;
 const { Resend } = require('resend');
 const twilio      = require('twilio');
+const { Client: SquareClient, Environment: SqEnv } = require('square');
 const { pool, initDB } = require('./db');
 
 const app  = express();
@@ -41,6 +42,23 @@ if (sms) {
   console.log('✔  SMS configured via Twilio — from', TWILIO_FROM);
 } else {
   console.warn('⚠  TWILIO_ACCOUNT_SID not set — SMS notifications are disabled');
+}
+
+// ── Square Payments ──────────────────────────────────────────────────────────
+const SQUARE_TOKEN  = process.env.SQUARE_ACCESS_TOKEN || '';
+const SQUARE_APP_ID = process.env.SQUARE_APP_ID       || '';
+const SQUARE_LOC_ID = process.env.SQUARE_LOCATION_ID  || '';
+const SQUARE_ENV    = process.env.SQUARE_ENV           || 'sandbox';
+
+const sqClient = SQUARE_TOKEN ? new SquareClient({
+  accessToken: SQUARE_TOKEN,
+  environment: SQUARE_ENV === 'production' ? SqEnv.Production : SqEnv.Sandbox,
+}) : null;
+
+if (sqClient) {
+  console.log('✔  Square payments configured —', SQUARE_ENV);
+} else {
+  console.warn('⚠  SQUARE_ACCESS_TOKEN not set — payment collection disabled');
 }
 
 async function sendSMS(to, body) {
@@ -635,6 +653,60 @@ app.get('/api/stats', auth, async (_req, res) => {
       recent:    recent.rows,
     });
   } catch (err) { res.status(500).json({ error: 'Server error' }); }
+});
+
+// ════════════════════════════════════════════════════════════════════════════════
+// SQUARE PAYMENTS
+// ════════════════════════════════════════════════════════════════════════════════
+
+// Public config — appId + locationId are safe to expose client-side
+app.get('/api/sq-config', (_req, res) => {
+  res.json({
+    appId:      SQUARE_APP_ID,
+    locationId: SQUARE_LOC_ID,
+    env:        SQUARE_ENV,
+    enabled:    !!(SQUARE_TOKEN && SQUARE_APP_ID && SQUARE_LOC_ID),
+  });
+});
+
+// Charge $30 deposit + create booking in one shot
+app.post('/api/charge', async (req, res) => {
+  if (!sqClient) return res.status(503).json({ error: 'Payments are not configured yet.' });
+
+  const { sourceId, booking } = req.body;
+  const {
+    client_name, client_email = '', client_phone, service_name,
+    stylist_name = 'Any stylist', preferred_date, preferred_time, message = '',
+  } = booking || {};
+
+  if (!sourceId || !client_name || !client_phone || !service_name || !preferred_date || !preferred_time)
+    return res.status(400).json({ error: 'Missing required fields.' });
+
+  try {
+    const { result } = await sqClient.paymentsApi.createPayment({
+      sourceId,
+      idempotencyKey: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      amountMoney:    { amount: BigInt(3000), currency: 'USD' },
+      locationId:     SQUARE_LOC_ID,
+      note:           `$30 deposit — ${service_name} for ${client_name}`,
+    });
+
+    const paymentId = result.payment.id;
+    console.log('✔  Square charge', paymentId, '— $30 from', client_name);
+
+    const { rows } = await pool.query(
+      `INSERT INTO bookings
+         (client_name,client_email,client_phone,service_name,stylist_name,preferred_date,preferred_time,message)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+      [client_name, client_email, client_phone, service_name, stylist_name, preferred_date, preferred_time, message]
+    );
+    sendBookingEmails(rows[0]);
+    res.json({ ok: true, bookingId: rows[0].id, paymentId });
+  } catch (err) {
+    const detail = err?.errors?.[0]?.detail || err.message || 'Payment failed';
+    console.error('✗  Square charge failed:', detail);
+    res.status(402).json({ error: detail });
+  }
 });
 
 // ── SPA fallback ───────────────────────────────────────────────────────────────
