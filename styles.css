@@ -1850,9 +1850,10 @@ img[loading="lazy"] { content-visibility: auto; }
     height: 40px;
     border-radius: 50%;
     object-fit: cover;
-    object-position: top center;
+    object-position: center 15%;
     border: 2px solid #b89b6a;
     flex-shrink: 0;
+    align-self: center;
     margin-left: 0.25rem;
   }
   body { padding-bottom: 90px; }
