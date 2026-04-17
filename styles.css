@@ -1809,9 +1809,9 @@ img[loading="lazy"] { content-visibility: auto; }
     left: 1.25rem;
     right: 1.25rem;
     z-index: 999;
-    padding: 0.5rem;
+    padding: 0.5rem 1rem;
     background: #111;
-    border-radius: 50px;
+    border-radius: 16px;
     gap: 0.4rem;
     box-shadow: 0 8px 32px rgba(0,0,0,0.35);
     white-space: nowrap;
