@@ -1659,17 +1659,15 @@ img[loading="lazy"] { content-visibility: auto; }
   .mobile-cta-bar {
     display: flex;
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    transform: none;
+    bottom: calc(1.25rem + env(safe-area-inset-bottom));
+    left: 1.25rem;
+    right: 1.25rem;
     z-index: 999;
-    padding: 0.6rem 1rem calc(0.6rem + env(safe-area-inset-bottom));
+    padding: 0.5rem;
     background: #111;
-    border-radius: 0;
-    gap: 0.5rem;
-    box-shadow: 0 -4px 24px rgba(0,0,0,0.3);
-    width: 100%;
+    border-radius: 50px;
+    gap: 0.4rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.35);
     white-space: nowrap;
     transition: opacity 0.3s ease;
     justify-content: center;
