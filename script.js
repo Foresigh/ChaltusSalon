@@ -756,6 +756,35 @@
     }, 400);
   };
 
+  // Service card buttons with data-service → scroll to booking + pre-select service
+  function selectServiceInDropdown(keyword) {
+    var sel = document.getElementById('b-service');
+    if (!sel) return;
+    var lower = keyword.toLowerCase();
+    var match = Array.from(sel.options).find(function (o) {
+      return o.value && (
+        o.value.toLowerCase().includes(lower) ||
+        lower.includes(o.value.toLowerCase())
+      );
+    });
+    if (match) {
+      sel.value = match.value;
+      sel.dispatchEvent(new Event('change'));
+    }
+  }
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-service]');
+    if (!btn) return;
+    var keyword = btn.getAttribute('data-service');
+    if (!keyword) return;
+    e.preventDefault();
+    var bookingSection = document.getElementById('booking');
+    if (bookingSection) bookingSection.scrollIntoView({ behavior: 'smooth' });
+    // Give the dropdown time to populate (first visit) then select
+    setTimeout(function () { selectServiceInDropdown(keyword); }, 350);
+  });
+
 
   /* ====================================================
      9. CRO TRACKING HELPER (replace with your analytics)
