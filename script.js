@@ -311,33 +311,45 @@
       });
     }
 
+    function withTimeout(promise, ms) {
+      return Promise.race([
+        promise,
+        new Promise(function (_, reject) {
+          setTimeout(function () { reject(new Error('timeout')); }, ms);
+        }),
+      ]);
+    }
+
     async function initSquare(cfg) {
       try {
         var sdkUrl = cfg.env === 'production'
           ? 'https://web.squarecdn.com/v1/square.js'
           : 'https://sandbox.web.squarecdn.com/v1/square.js';
+
+        console.log('Square: loading SDK…', sdkUrl);
         await loadSquareScript(sdkUrl);
+        console.log('Square: SDK loaded, initialising payments…');
 
         var payments = window.Square.payments(cfg.appId, cfg.locationId);
-        sqCard = await payments.card({
+        console.log('Square: payments() created, building card…');
+
+        sqCard = await withTimeout(payments.card({
           style: {
-            '.input-container': {
-              borderColor:  '#d4d4d4',
-              borderRadius: '6px',
-            },
+            '.input-container': { borderColor: '#d4d4d4', borderRadius: '6px' },
             '.input-container.is-focus': { borderColor: '#0a0a0a' },
             '.input-container.is-error':  { borderColor: '#c0392b' },
             input: { fontSize: '14px', color: '#141414' },
           },
-        });
-        await sqCard.attach('#card-container');
+        }), 10000);
+        console.log('Square: card created, attaching…');
+
+        await withTimeout(sqCard.attach('#card-container'), 10000);
         if (sqLoadingEl) sqLoadingEl.hidden = true;
         sqReady = true;
         console.log('✔ Square card form ready');
       } catch (e) {
-        console.warn('Square init failed:', e);
+        console.error('Square init failed at step:', e.message, e);
         if (sqLoadingEl) sqLoadingEl.hidden = true;
-        // Fall back: hide deposit block, let them book without payment
         var depositEl = document.getElementById('bk-deposit');
         if (depositEl) depositEl.hidden = true;
         submitBtn.textContent = 'Request Appointment →';
