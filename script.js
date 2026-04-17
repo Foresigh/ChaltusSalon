@@ -327,8 +327,7 @@
             },
             '.input-container.is-focus': { borderColor: '#0a0a0a' },
             '.input-container.is-error':  { borderColor: '#c0392b' },
-            input: { fontSize: '14px', color: '#141414', fontFamily: 'Inter, sans-serif' },
-            'input::placeholder': { color: '#8f8f8f' },
+            input: { fontSize: '14px', color: '#141414' },
           },
         });
         await sqCard.attach('#card-container');
