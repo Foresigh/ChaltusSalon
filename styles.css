@@ -821,6 +821,68 @@ p  { font-size: 1rem; }
 }
 .about__image:hover img { filter: grayscale(0%); }
 
+/* ── Press / Media section ───────────────────────────────────────────────── */
+.press { background: var(--white); }
+
+.press__inner {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--s12);
+  align-items: center;
+}
+@media (min-width: 900px) {
+  .press__inner { grid-template-columns: 1fr 1fr; gap: var(--s16); }
+}
+
+.press__text { display: flex; flex-direction: column; gap: var(--s5); }
+.press__text h2 { font-size: clamp(1.8rem, 3vw, 2.4rem); }
+.press__text h2 em { font-style: italic; color: #b89b6a; }
+.press__text p { color: var(--gray-600); font-size: 1.05rem; line-height: 1.75; }
+
+.press__quote {
+  border-left: 3px solid #b89b6a;
+  padding: 0.75rem 1.25rem;
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-style: italic;
+  color: var(--gray-700);
+  margin-top: 0.5rem;
+}
+.press__quote span {
+  display: block;
+  font-size: 0.78rem;
+  font-style: normal;
+  font-family: var(--font-sans);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gray-400);
+  margin-top: 0.5rem;
+}
+
+.press__images {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s3);
+}
+.press__img-main,
+.press__img-secondary {
+  overflow: hidden;
+  border-radius: 4px;
+  aspect-ratio: 3/4;
+  background: var(--gray-100);
+}
+.press__img-main { grid-row: span 1; }
+.press__img-main img,
+.press__img-secondary img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  transition: transform 0.5s ease;
+}
+.press__img-main:hover img,
+.press__img-secondary:hover img { transform: scale(1.03); }
+
 /* ================================================================
    TESTIMONIALS — uniform dark cards, fully readable
    ================================================================ */
