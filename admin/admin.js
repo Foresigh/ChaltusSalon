@@ -193,13 +193,13 @@ function renderCharts(d) {
         },
         scales: {
           x: {
-            ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 10 }, maxTicksLimit: 8 },
-            grid: { color: 'rgba(255,255,255,0.06)' },
+            ticks: { color: '#9ca3af', font: { size: 10 }, maxTicksLimit: 8 },
+            grid: { color: '#f3f4f6' },
           },
           y: {
             beginAtZero: true,
-            ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 11 }, stepSize: 1 },
-            grid: { color: 'rgba(255,255,255,0.06)' },
+            ticks: { color: '#9ca3af', font: { size: 11 }, stepSize: 1 },
+            grid: { color: '#f3f4f6' },
           }
         }
       }
@@ -230,7 +230,7 @@ function renderCharts(d) {
           legend: {
             position: 'bottom',
             labels: {
-              color: 'rgba(255,255,255,0.6)',
+              color: '#6b7280',
               font: { size: 11 },
               padding: 12,
               boxWidth: 12,
