@@ -15,9 +15,27 @@
      LOGIN SCREEN
 ══════════════════════════════════════════════════════ -->
 <div id="login-screen">
+  <!-- Full-bleed background image -->
+  <div class="login-bg"></div>
+  <div class="login-overlay"></div>
+
+  <!-- Bottom-left branding -->
+  <div class="login-brand">
+    <span class="login-brand__eyebrow">As Featured In · Soelish SLC Magazine</span>
+    <h1 class="login-brand__name">Chaltu's Salon</h1>
+    <p class="login-brand__tagline">African Braiding &amp; Natural Hair Care · Salt Lake City, UT</p>
+    <div class="login-brand__stats">
+      <div class="login-stat"><span class="login-stat__num">68+</span><span class="login-stat__label">Reviews</span></div>
+      <div class="login-stat"><span class="login-stat__num">4.6★</span><span class="login-stat__label">Google Rating</span></div>
+      <div class="login-stat"><span class="login-stat__num">8+</span><span class="login-stat__label">Services</span></div>
+    </div>
+  </div>
+
+  <!-- Right login card -->
   <div class="login-card">
-    <div class="login-logo">CHALTUS</div>
-    <p class="login-sub">Admin Panel</p>
+    <div class="login-card__logo">CHALTU <span>&amp; CO</span></div>
+    <p class="login-card__welcome">Welcome back</p>
+    <p class="login-card__sub">Sign in to your admin dashboard</p>
     <form id="login-form">
       <div class="field">
         <label for="l-user">Username</label>
@@ -28,8 +46,9 @@
         <input id="l-pass" type="password" autocomplete="current-password" placeholder="••••••••" required />
       </div>
       <div id="login-error" class="alert alert--error" hidden></div>
-      <button type="submit" class="btn btn-primary w-full">Sign In</button>
+      <button type="submit" class="btn btn-primary w-full">Sign In →</button>
     </form>
+    <p class="login-card__footer">Chaltu's Salon · 1524 S State St, Salt Lake City</p>
   </div>
 </div>
 
