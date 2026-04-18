@@ -45,8 +45,15 @@ img { max-width: 100%; display: block; }
 .login-bg {
   position: absolute;
   inset: 0;
-  background: url('/images/ChaltuOnNewsPaper-1.jpeg') center center / cover no-repeat;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
   z-index: 0;
+  opacity: 0;
+  transition: opacity 1.2s ease-in-out;
+}
+.login-bg.is-active {
+  opacity: 1;
 }
 
 .login-overlay {

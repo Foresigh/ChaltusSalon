@@ -15,7 +15,8 @@
      LOGIN SCREEN
 ══════════════════════════════════════════════════════ -->
 <div id="login-screen">
-  <div class="login-bg"></div>
+  <div class="login-bg" id="login-bg-a"></div>
+  <div class="login-bg" id="login-bg-b"></div>
   <div class="login-overlay"></div>
 
   <!-- Floating card — right of center -->
@@ -386,5 +387,46 @@
 </div>
 
 <script src="admin.js"></script>
+<script>
+(function() {
+  const bgA = document.getElementById('login-bg-a');
+  const bgB = document.getElementById('login-bg-b');
+  // Start with the newspaper photo as default
+  bgA.style.backgroundImage = "url('/images/ChaltuOnNewsPaper-1.jpeg')";
+  bgA.classList.add('is-active');
+
+  let images = [];
+  let current = 0;
+  let active = 'a'; // which panel is visible
+
+  fetch('/api/gallery')
+    .then(r => r.json())
+    .then(data => {
+      images = data.filter(i => i.url).map(i => i.url);
+      if (!images.length) return;
+      // Set first image immediately
+      bgA.style.backgroundImage = `url('${images[0]}')`;
+      if (images.length < 2) return;
+      setInterval(nextSlide, 5000);
+    })
+    .catch(() => {}); // keep default newspaper photo on error
+
+  function nextSlide() {
+    current = (current + 1) % images.length;
+    const url = `url('${images[current]}')`;
+    if (active === 'a') {
+      bgB.style.backgroundImage = url;
+      bgB.classList.add('is-active');
+      bgA.classList.remove('is-active');
+      active = 'b';
+    } else {
+      bgA.style.backgroundImage = url;
+      bgA.classList.add('is-active');
+      bgB.classList.remove('is-active');
+      active = 'a';
+    }
+  }
+})();
+</script>
 </body>
 </html>
