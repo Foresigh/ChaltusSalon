@@ -82,8 +82,8 @@ p  { font-size: 1rem; }
   margin: 0 auto;
   padding: 0 var(--pad-x);
 }
-.section-pad { padding: var(--s20) 0; }
-@media (min-width: 768px) { .section-pad { padding: var(--s32) 0; } }
+.section-pad { padding: var(--s12) 0; }
+@media (min-width: 768px) { .section-pad { padding: var(--s16) 0; } }
 
 .section-header { text-align: center; margin-bottom: var(--s12); }
 .section-header h2 { color: var(--gray-900); }
