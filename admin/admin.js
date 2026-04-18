@@ -315,8 +315,13 @@ async function populateStylistFilter() {
   });
 }
 
+function paymentBadge(received, amount) {
+  if (received) return `<span class="payment-badge payment-badge--paid">✓ $${amount ?? 30} Paid</span>`;
+  return `<span class="payment-badge payment-badge--unpaid">Unpaid</span>`;
+}
+
 function renderBookingRows(tbody, rows, compact) {
-  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="10" class="empty-state">No bookings found.</td></tr>`; return; }
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="11" class="empty-state">No bookings found.</td></tr>`; return; }
   tbody.innerHTML = rows.map(b => `
     <tr class="booking-row" data-id="${b.id}" style="cursor:pointer;">
       ${compact ? '' : `<td>#${b.id}</td>`}
@@ -327,6 +332,11 @@ function renderBookingRows(tbody, rows, compact) {
       <td>${fmt(b.preferred_date)}</td>
       <td><strong>${escHTML(b.preferred_time)}</strong></td>
       <td>${statusBadge(b.status)}</td>
+      <td>
+        <button class="payment-toggle ${b.payment_received ? 'payment-toggle--paid' : ''}" data-id="${b.id}" data-paid="${b.payment_received ? '1':'0'}" data-amount="${b.payment_amount ?? 30}" title="Toggle payment">
+          ${b.payment_received ? `✓ $${b.payment_amount ?? 30}` : '$ Mark Paid'}
+        </button>
+      </td>
       ${compact ? '' : `<td style="max-width:140px;font-size:.78rem;color:var(--gray-500)">${escHTML(b.message)}</td>`}
       <td>
         <div style="display:flex;gap:.25rem;flex-wrap:wrap">
@@ -367,7 +377,88 @@ function renderBookingRows(tbody, rows, compact) {
       btn.closest('tr').remove();
     });
   });
+
+  tbody.querySelectorAll('.payment-toggle').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      const isPaid  = btn.dataset.paid === '1';
+      const amount  = parseInt(btn.dataset.amount, 10) || 30;
+      const newPaid = !isPaid;
+      const res = await apiFetch(`/api/bookings/${btn.dataset.id}/payment`, {
+        method: 'PATCH',
+        body: JSON.stringify({ payment_received: newPaid, payment_amount: amount }),
+      });
+      if (res) {
+        btn.dataset.paid = newPaid ? '1' : '0';
+        btn.textContent  = newPaid ? `✓ $${amount}` : '$ Mark Paid';
+        btn.classList.toggle('payment-toggle--paid', newPaid);
+        // Refresh revenue stat
+        loadDashboard();
+      }
+    });
+  });
 }
+
+// ── Manual Booking ──────────────────────────────────────────────────────────────
+async function openManualBookingModal() {
+  const modal = $('#manual-booking-modal');
+  modal.hidden = false;
+  // Set today as default date
+  $('#mb-date').value = todayStr();
+
+  // Populate stylists
+  const stylists = await apiFetch('/api/stylists');
+  const stylistSel = $('#mb-stylist');
+  stylistSel.innerHTML = '<option value="Any stylist">Any stylist</option>';
+  (stylists || []).forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.name; o.textContent = s.name;
+    stylistSel.appendChild(o);
+  });
+
+  // Populate services
+  const services = await apiFetch('/api/services');
+  const serviceSel = $('#mb-service');
+  serviceSel.innerHTML = '<option value="">Select service</option>';
+  (services || []).forEach(s => {
+    const o = document.createElement('option');
+    o.value = s.name; o.textContent = `${s.name} — $${s.price}`;
+    serviceSel.appendChild(o);
+  });
+}
+
+$('#open-manual-booking').addEventListener('click', openManualBookingModal);
+$('#manual-booking-close').addEventListener('click',  () => { $('#manual-booking-modal').hidden = true; });
+$('#manual-booking-cancel').addEventListener('click', () => { $('#manual-booking-modal').hidden = true; });
+
+$('#manual-booking-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const err = $('#mb-error');
+  err.hidden = true;
+  const payload = {
+    client_name:      $('#mb-name').value.trim(),
+    client_phone:     $('#mb-phone').value.trim(),
+    client_email:     $('#mb-email').value.trim(),
+    service_name:     $('#mb-service').value,
+    stylist_name:     $('#mb-stylist').value,
+    preferred_date:   $('#mb-date').value,
+    preferred_time:   $('#mb-time').value,
+    status:           $('#mb-status').value,
+    payment_received: $('#mb-paid').checked,
+    payment_amount:   parseInt($('#mb-amount').value, 10) || 30,
+    message:          $('#mb-notes').value.trim(),
+  };
+  const res = await apiFetch('/api/bookings/manual', { method: 'POST', body: JSON.stringify(payload) });
+  if (res && res.id) {
+    $('#manual-booking-modal').hidden = true;
+    $('#manual-booking-form').reset();
+    loadDashboard();
+    loadBookings();
+  } else {
+    err.textContent = (res && res.error) || 'Failed to create booking.';
+    err.hidden = false;
+  }
+});
 
 $('#booking-filter-status').addEventListener('change', loadBookings);
 $('#booking-filter-stylist').addEventListener('change', loadBookings);

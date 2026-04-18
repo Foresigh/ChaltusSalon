@@ -627,6 +627,48 @@ app.patch('/api/bookings/:id', auth, async (req, res) => {
   } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 
+// Manual booking — admin creates booking directly
+app.post('/api/bookings/manual', auth, async (req, res) => {
+  try {
+    const {
+      client_name, client_email = '', client_phone,
+      service_name, stylist_name = 'Any stylist',
+      preferred_date, preferred_time,
+      message = '', status = 'confirmed',
+      payment_received = false, payment_amount = 30,
+    } = req.body;
+    if (!client_name || !client_phone || !service_name || !preferred_date || !preferred_time) {
+      return res.status(400).json({ error: 'Name, phone, service, date and time are required.' });
+    }
+    const { rows } = await pool.query(
+      `INSERT INTO bookings
+         (client_name, client_email, client_phone, service_name, stylist_name,
+          preferred_date, preferred_time, message, status, payment_received, payment_amount, source)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'admin')
+       RETURNING *`,
+      [client_name, client_email, client_phone, service_name, stylist_name,
+       preferred_date, preferred_time, message, status, payment_received, payment_amount]
+    );
+    res.json(rows[0]);
+  } catch (err) { res.status(500).json({ error: 'Server error' }); }
+});
+
+// Toggle payment received
+app.patch('/api/bookings/:id/payment', auth, async (req, res) => {
+  try {
+    const { payment_received, payment_amount } = req.body;
+    const { rows } = await pool.query(
+      `UPDATE bookings SET
+         payment_received = COALESCE($1, payment_received),
+         payment_amount   = COALESCE($2, payment_amount)
+       WHERE id = $3 RETURNING *`,
+      [payment_received, payment_amount, req.params.id]
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'Not found' });
+    res.json(rows[0]);
+  } catch (err) { res.status(500).json({ error: 'Server error' }); }
+});
+
 app.delete('/api/bookings/:id', auth, async (req, res) => {
   try {
     await pool.query('DELETE FROM bookings WHERE id = $1', [req.params.id]);
@@ -658,7 +700,9 @@ app.get('/api/stats', auth, async (_req, res) => {
     ]);
     const confirmedN  = parseInt(confirmed.rows[0].c, 10);
     const completedN  = parseInt(completed.rows[0].c, 10);
-    const revenue     = (confirmedN + completedN) * 30; // $30 deposit per booking
+    // Sum actual payment_amount where payment was received
+    const revenueRow  = await pool.query(`SELECT COALESCE(SUM(payment_amount),0) AS total FROM bookings WHERE payment_received = TRUE`);
+    const revenue     = parseInt(revenueRow.rows[0].total, 10);
     res.json({
       total:     parseInt(total.rows[0].c, 10),
       pending:   parseInt(pending.rows[0].c, 10),
