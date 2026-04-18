@@ -115,23 +115,26 @@ img { max-width: 100%; display: block; }
 .login-card {
   position: relative;
   z-index: 2;
-  background: rgba(255,255,255,0.97);
-  backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border-left: 1px solid rgba(255, 255, 255, 0.18);
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
   padding: 2.75rem 2.25rem;
   width: 100%;
-  max-width: 360px;
+  max-width: 380px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  box-shadow: -8px 0 48px rgba(0,0,0,0.3);
+  box-shadow: -4px 0 60px rgba(0, 0, 0, 0.4), inset 1px 0 0 rgba(255,255,255,0.08);
 }
 .login-card__logo {
   font-family: Georgia, serif;
   font-size: 1rem;
   font-weight: 400;
   letter-spacing: 0.2em;
-  color: #0a0a0a;
+  color: rgba(255,255,255,0.9);
   margin-bottom: 2.5rem;
 }
 .login-card__logo span { color: #b89b6a; }
@@ -139,18 +142,42 @@ img { max-width: 100%; display: block; }
   font-family: Georgia, serif;
   font-size: 1.7rem;
   font-weight: 400;
-  color: #0a0a0a;
+  color: #ffffff;
   margin-bottom: 0.4rem;
 }
 .login-card__sub {
   font-size: 0.82rem;
-  color: #9ca3af;
+  color: rgba(255,255,255,0.45);
   margin-bottom: 2rem;
 }
+.login-card .field label {
+  color: rgba(255,255,255,0.7);
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+}
+.login-card .field input {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #ffffff;
+  border-radius: 6px;
+}
+.login-card .field input::placeholder { color: rgba(255,255,255,0.3); }
+.login-card .field input:focus {
+  outline: none;
+  border-color: #b89b6a;
+  background: rgba(255,255,255,0.15);
+}
+.login-card .btn-primary {
+  background: #b89b6a;
+  color: #fff;
+  border: none;
+  letter-spacing: 0.08em;
+}
+.login-card .btn-primary:hover { background: #a6895a; }
 .login-card__footer {
   margin-top: 2rem;
   font-size: 0.7rem;
-  color: #c0c0c0;
+  color: rgba(255,255,255,0.25);
   text-align: center;
   letter-spacing: 0.02em;
 }
@@ -160,10 +187,12 @@ img { max-width: 100%; display: block; }
   .login-brand { display: none; }
   .login-card {
     min-height: auto;
-    border-radius: 12px;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.18);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
   }
 }
+
 
 /* ── Layout ───────────────────────────────────────────────── */
 #app { display: flex; min-height: 100vh; }
