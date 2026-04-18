@@ -1697,6 +1697,11 @@ p  { font-size: 1rem; }
   font-size: 1.3rem;
   letter-spacing: 0.15em;
   color: var(--white);
+  font-style: normal;
+}
+.footer-brand__logo em {
+  font-style: normal;
+  color: #b89b6a;
 }
 .footer-brand p { font-size: 0.9rem; line-height: 1.65; max-width: 280px; }
 .footer-brand__social { display: flex; gap: var(--s4); margin-top: var(--s2); }
