@@ -835,9 +835,37 @@ p  { font-size: 1rem; }
 }
 
 .press__text { display: flex; flex-direction: column; gap: var(--s5); }
-.press__text h2 { font-size: clamp(1.8rem, 3vw, 2.4rem); }
+.press__text h2 { font-size: clamp(1.8rem, 3vw, 2.4rem); line-height: 1.2; }
 .press__text h2 em { font-style: italic; color: #b89b6a; }
 .press__text p { color: var(--gray-600); font-size: 1.05rem; line-height: 1.75; }
+.press__issue {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #b89b6a;
+  margin-top: -0.75rem;
+}
+.press__order-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  align-self: flex-start;
+  background: var(--black);
+  color: var(--white);
+  text-decoration: none;
+  padding: 0.85rem 1.5rem;
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  border-radius: 4px;
+  margin-top: 0.5rem;
+  transition: background var(--t-base);
+}
+.press__order-btn:hover { background: #b89b6a; }
+.press__order-btn span { font-weight: 400; opacity: 0.7; font-size: 0.75rem; }
 
 .press__quote {
   border-left: 3px solid #b89b6a;
