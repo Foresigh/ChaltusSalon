@@ -116,6 +116,24 @@ $$('.collapsible-head').forEach(head => {
 });
 
 // ── Dashboard ──────────────────────────────────────────────────────────────────
+let chartTrend = null;
+let chartServices = null;
+
+// Set today's date in the actions bar
+const dashDate = $('#dash-date');
+if (dashDate) {
+  dashDate.textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+// "View all" shortcut on dashboard
+document.addEventListener('click', e => {
+  const link = e.target.closest('[data-tab]');
+  if (link && link.classList.contains('dash-view-all')) {
+    e.preventDefault();
+    switchTab(link.dataset.tab);
+  }
+});
+
 async function loadDashboard() {
   const d = await apiFetch('/api/stats');
   if (!d) return;
@@ -123,8 +141,113 @@ async function loadDashboard() {
   $('#stat-pending').textContent   = d.pending;
   $('#stat-confirmed').textContent = d.confirmed;
   $('#stat-today').textContent     = d.today;
+  $('#stat-revenue').textContent   = '$' + (d.revenue ?? 0).toLocaleString();
   updatePendingBadge(d.pending);
   renderBookingRows($('#recent-table tbody'), d.recent, true);
+  renderCharts(d);
+}
+
+function renderCharts(d) {
+  // ── Trend: bookings over last 30 days ──
+  const trendCanvas = $('#chart-bookings-trend');
+  if (trendCanvas) {
+    // Build full 30-day label array
+    const days = [];
+    const counts = [];
+    for (let i = 29; i >= 0; i--) {
+      const dt = new Date();
+      dt.setDate(dt.getDate() - i);
+      const key = dt.toISOString().slice(0, 10);
+      days.push(dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+      const found = (d.byDay || []).find(r => r.day && r.day.slice(0,10) === key);
+      counts.push(found ? parseInt(found.c, 10) : 0);
+    }
+    if (chartTrend) chartTrend.destroy();
+    chartTrend = new Chart(trendCanvas, {
+      type: 'line',
+      data: {
+        labels: days,
+        datasets: [{
+          label: 'Bookings',
+          data: counts,
+          borderColor: '#b89b6a',
+          backgroundColor: 'rgba(184,155,106,0.12)',
+          borderWidth: 2,
+          pointRadius: 3,
+          pointBackgroundColor: '#b89b6a',
+          fill: true,
+          tension: 0.4,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(10,10,10,0.85)',
+            titleColor: '#b89b6a',
+            bodyColor: '#fff',
+            padding: 10,
+            cornerRadius: 8,
+          }
+        },
+        scales: {
+          x: {
+            ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 10 }, maxTicksLimit: 8 },
+            grid: { color: 'rgba(255,255,255,0.06)' },
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 11 }, stepSize: 1 },
+            grid: { color: 'rgba(255,255,255,0.06)' },
+          }
+        }
+      }
+    });
+  }
+
+  // ── Doughnut: bookings by service ──
+  const serviceCanvas = $('#chart-services');
+  if (serviceCanvas && d.byService && d.byService.length) {
+    const palette = ['#b89b6a','#d4b896','#8a7350','#e8d5b0','#6b5a3e','#f0e6d0'];
+    if (chartServices) chartServices.destroy();
+    chartServices = new Chart(serviceCanvas, {
+      type: 'doughnut',
+      data: {
+        labels: d.byService.map(r => r.service || 'Other'),
+        datasets: [{
+          data: d.byService.map(r => parseInt(r.c, 10)),
+          backgroundColor: palette,
+          borderColor: 'rgba(255,255,255,0.08)',
+          borderWidth: 2,
+          hoverOffset: 6,
+        }]
+      },
+      options: {
+        responsive: true,
+        cutout: '68%',
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: 'rgba(255,255,255,0.6)',
+              font: { size: 11 },
+              padding: 12,
+              boxWidth: 12,
+              boxHeight: 12,
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(10,10,10,0.85)',
+            titleColor: '#b89b6a',
+            bodyColor: '#fff',
+            padding: 10,
+            cornerRadius: 8,
+          }
+        }
+      }
+    });
+  }
 }
 
 function updatePendingBadge(n) {

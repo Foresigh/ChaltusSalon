@@ -637,19 +637,38 @@ app.delete('/api/bookings/:id', auth, async (req, res) => {
 app.get('/api/stats', auth, async (_req, res) => {
   try {
     const today = new Date().toISOString().slice(0, 10);
-    const [total, pending, confirmed, todayCount, recent] = await Promise.all([
+    const [total, pending, confirmed, completed, todayCount, recent, byDay, byService] = await Promise.all([
       pool.query('SELECT COUNT(*) AS c FROM bookings'),
       pool.query("SELECT COUNT(*) AS c FROM bookings WHERE status='pending'"),
       pool.query("SELECT COUNT(*) AS c FROM bookings WHERE status='confirmed'"),
+      pool.query("SELECT COUNT(*) AS c FROM bookings WHERE status='completed'"),
       pool.query('SELECT COUNT(*) AS c FROM bookings WHERE preferred_date = $1', [today]),
       pool.query('SELECT * FROM bookings ORDER BY created_at DESC LIMIT 8'),
+      pool.query(`
+        SELECT DATE(created_at) AS day, COUNT(*) AS c
+        FROM bookings
+        WHERE created_at >= NOW() - INTERVAL '30 days'
+        GROUP BY day ORDER BY day ASC
+      `),
+      pool.query(`
+        SELECT service, COUNT(*) AS c
+        FROM bookings
+        GROUP BY service ORDER BY c DESC LIMIT 6
+      `),
     ]);
+    const confirmedN  = parseInt(confirmed.rows[0].c, 10);
+    const completedN  = parseInt(completed.rows[0].c, 10);
+    const revenue     = (confirmedN + completedN) * 30; // $30 deposit per booking
     res.json({
       total:     parseInt(total.rows[0].c, 10),
       pending:   parseInt(pending.rows[0].c, 10),
-      confirmed: parseInt(confirmed.rows[0].c, 10),
+      confirmed: confirmedN,
+      completed: completedN,
       today:     parseInt(todayCount.rows[0].c, 10),
+      revenue,
       recent:    recent.rows,
+      byDay:     byDay.rows,
+      byService: byService.rows,
     });
   } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
