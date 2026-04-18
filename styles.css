@@ -652,7 +652,7 @@ p  { font-size: 1rem; }
 .social-section {
   position: relative;
   background: var(--black);
-  padding: 4rem 1.5rem;
+  padding: 0 1.5rem;
   text-align: center;
   overflow: hidden;
 }
@@ -898,7 +898,6 @@ p  { font-size: 1rem; }
 .testimonials {
   background: var(--black);
   color: var(--white);
-  padding: clamp(4rem, 8vw, 6rem) 0;
 }
 
 /* ---- Section header ---- */
@@ -1131,7 +1130,6 @@ p  { font-size: 1rem; }
 .final-cta {
   background: var(--black);
   color: var(--white);
-  padding: var(--s20) 0;
 }
 
 /* Two-column booking layout */
@@ -1248,11 +1246,36 @@ p  { font-size: 1rem; }
 }
 
 /* ================================================================
+   SEO CONTENT BLOCK
+   ================================================================ */
+.seo-block {
+  background: var(--gray-50);
+  border-top: 1px solid #e5e5e5;
+}
+.seo-block__heading {
+  font-family: var(--font-serif);
+  font-size: clamp(1.2rem, 2.5vw, 1.6rem);
+  font-weight: 400;
+  margin-bottom: 1.25rem;
+  color: var(--black);
+}
+.seo-block__body {
+  max-width: 860px;
+}
+.seo-block__body p {
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: #444;
+  margin-bottom: 0.9rem;
+}
+.seo-block__body a { color: var(--black); }
+.seo-block__body a:hover { color: var(--gold); }
+
+/* ================================================================
    BOOKING SECTION — clean calendar UI
    ================================================================ */
 .booking-section {
   background: #f5f5f3;
-  padding: clamp(4rem, 8vw, 6rem) 0;
 }
 
 .bk-header {
