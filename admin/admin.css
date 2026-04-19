@@ -673,6 +673,75 @@ textarea { resize: vertical; }
 .toolbar__left { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 .select-sm, .input-sm { padding: 0.4rem 0.7rem; font-size: 0.82rem; border: 1px solid var(--gray-200); border-radius: var(--radius); background: var(--white); }
 
+/* ── Stylist avatar filter bar ────────────────────────────── */
+.stylist-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 1rem 1.25rem;
+  background: #ffffff;
+  border: 1px solid var(--gray-100);
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.stylist-avatar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 8px;
+  transition: transform 0.15s;
+}
+.stylist-avatar:hover { transform: translateY(-2px); }
+.stylist-avatar__img {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--gray-100);
+  border: 2.5px solid var(--gray-200);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s;
+}
+.stylist-avatar__img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+.stylist-avatar__initials {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gray-500);
+  letter-spacing: 0.05em;
+}
+.stylist-avatar__all-icon {
+  color: var(--gray-400);
+}
+.stylist-avatar__name {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--gray-500);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+/* Active state — gold ring */
+.stylist-avatar.active .stylist-avatar__img {
+  border-color: #b89b6a;
+  box-shadow: 0 0 0 2px rgba(184,155,106,0.25);
+}
+.stylist-avatar.active .stylist-avatar__name {
+  color: #b89b6a;
+  font-weight: 600;
+}
+
 /* ── Gallery ──────────────────────────────────────────────── */
 .upload-zone {
   background: var(--white);

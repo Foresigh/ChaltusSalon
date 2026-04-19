@@ -252,7 +252,19 @@
 
         <!-- List view -->
         <div id="booking-list-view">
-          <div class="toolbar">
+
+          <!-- Stylist avatar filter bar -->
+          <div class="stylist-filter-bar" id="stylist-filter-bar">
+            <button class="stylist-avatar stylist-avatar--all active" data-stylist="">
+              <span class="stylist-avatar__img stylist-avatar__all-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </span>
+              <span class="stylist-avatar__name">All</span>
+            </button>
+          </div>
+
+          <!-- Filters row -->
+          <div class="toolbar" style="margin-top:1rem;">
             <div class="toolbar__left">
               <select id="booking-filter-status" class="select-sm">
                 <option value="">All statuses</option>
@@ -261,18 +273,16 @@
                 <option value="completed">Completed</option>
                 <option value="cancelled">Cancelled</option>
               </select>
-              <select id="booking-filter-stylist" class="select-sm">
-                <option value="">All stylists</option>
-              </select>
               <input type="date" id="booking-filter-date" class="input-sm" />
               <button class="btn btn-sm btn-outline" id="booking-today-btn">Today</button>
-              <button class="btn btn-sm btn-outline" id="booking-filter-clear">Clear</button>
+              <button class="btn btn-sm btn-outline" id="booking-filter-clear">All Dates</button>
             </div>
             <button class="btn btn-sm btn-primary" id="booking-refresh">↻ Refresh</button>
           </div>
+
           <div class="card">
             <div class="table-wrap"><table id="bookings-table">
-              <thead><tr><th>#</th><th>Client</th><th>Phone</th><th>Service</th><th>Stylist</th><th>Date</th><th>Time</th><th>Status</th><th>Notes</th><th>Actions</th></tr></thead>
+              <thead><tr><th>#</th><th>Client</th><th>Phone</th><th>Service</th><th>Stylist</th><th>Date</th><th>Time</th><th>Status</th><th>Payment</th><th>Notes</th><th>Actions</th></tr></thead>
               <tbody></tbody>
             </table></div>
           </div>

@@ -560,15 +560,19 @@ app.post('/api/bookings', async (req, res) => {
 
 app.get('/api/bookings', auth, async (req, res) => {
   try {
-    const { status, date, stylist } = req.query;
+    const { status, date, stylist, sort } = req.query;
     const where  = [];
     const params = [];
     if (status)  { params.push(status);  where.push(`status = $${params.length}`); }
     if (date)    { params.push(date);    where.push(`preferred_date = $${params.length}`); }
     if (stylist) { params.push(stylist); where.push(`stylist_name = $${params.length}`); }
+    // sort=created_at_desc → most recent bookings first; default → upcoming scheduled first
+    const order = sort === 'created_at_desc'
+      ? 'ORDER BY created_at DESC'
+      : 'ORDER BY preferred_date ASC, preferred_time ASC, created_at DESC';
     const sql = 'SELECT * FROM bookings' +
       (where.length ? ' WHERE ' + where.join(' AND ') : '') +
-      ' ORDER BY preferred_date ASC, preferred_time ASC, created_at DESC';
+      ' ' + order;
     const { rows } = await pool.query(sql, params);
     res.json(rows);
   } catch (err) { res.status(500).json({ error: 'Server error' }); }

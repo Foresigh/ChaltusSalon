@@ -94,7 +94,11 @@ function switchTab(tab) {
   $$('.panel').forEach(el => el.classList.toggle('active', el.dataset.panel === tab));
   $('#page-title').textContent = TAB_TITLES[tab] ?? tab;
   if (tab === 'dashboard')   loadDashboard();
-  if (tab === 'bookings')    loadBookings();
+  if (tab === 'bookings') {
+    // Default to today's date on first open
+    if (!$('#booking-filter-date').value) $('#booking-filter-date').value = todayStr();
+    loadBookings();
+  }
   if (tab === 'gallery')     loadGallery();
   if (tab === 'stylists')    loadStylists();
   if (tab === 'services')    loadServices();
@@ -291,14 +295,18 @@ $('#view-schedule-btn').addEventListener('click', () => {
 });
 
 // ── List view ─────────────────────────────────────────────────────────────────
+let activeBookingStylist = '';
+
 async function loadBookings() {
   const status  = $('#booking-filter-status').value;
   const date    = $('#booking-filter-date').value;
-  const stylist = $('#booking-filter-stylist').value;
+  const stylist = activeBookingStylist;
   const params  = new URLSearchParams();
   if (status)  params.set('status', status);
   if (date)    params.set('date', date);
   if (stylist) params.set('stylist', stylist);
+  // Most recent booking on top
+  params.set('sort', 'created_at_desc');
   const data = await apiFetch(`/api/bookings?${params}`);
   if (!data) return;
   renderBookingRows($('#bookings-table tbody'), data, false);
@@ -307,11 +315,37 @@ async function loadBookings() {
 async function populateStylistFilter() {
   const data = await apiFetch('/api/stylists');
   if (!data) return;
-  const sel = $('#booking-filter-stylist');
+  const bar = $('#stylist-filter-bar');
+
   data.forEach(s => {
-    const o = document.createElement('option');
-    o.value = s.name; o.textContent = s.name;
-    sel.appendChild(o);
+    const photo = s.photo_url || (s.photo ? `/uploads/${s.photo}` : '');
+    const btn = document.createElement('button');
+    btn.className = 'stylist-avatar';
+    btn.dataset.stylist = s.name;
+    btn.innerHTML = `
+      <span class="stylist-avatar__img">
+        ${photo
+          ? `<img src="${escHTML(photo)}" alt="${escHTML(s.name)}" />`
+          : `<span class="stylist-avatar__initials">${escHTML(s.name.split(' ').map(w=>w[0]).join('').slice(0,2))}</span>`
+        }
+      </span>
+      <span class="stylist-avatar__name">${escHTML(s.name.split(' ')[0])}</span>
+    `;
+    btn.addEventListener('click', () => {
+      $$('.stylist-avatar', bar).forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeBookingStylist = s.name;
+      loadBookings();
+    });
+    bar.appendChild(btn);
+  });
+
+  // "All" button resets filter
+  $('.stylist-avatar--all', bar).addEventListener('click', () => {
+    $$('.stylist-avatar', bar).forEach(b => b.classList.remove('active'));
+    $('.stylist-avatar--all', bar).classList.add('active');
+    activeBookingStylist = '';
+    loadBookings();
   });
 }
 
@@ -468,9 +502,8 @@ $('#booking-today-btn').addEventListener('click', () => {
   loadBookings();
 });
 $('#booking-filter-clear').addEventListener('click', () => {
-  $('#booking-filter-status').value  = '';
-  $('#booking-filter-stylist').value = '';
-  $('#booking-filter-date').value    = '';
+  $('#booking-filter-status').value = '';
+  $('#booking-filter-date').value   = '';
   loadBookings();
 });
 $('#booking-refresh').addEventListener('click', loadBookings);
