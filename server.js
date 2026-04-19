@@ -69,11 +69,18 @@ async function sendSMS(to, body) {
 // ── Shared email template ────────────────────────────────────────────────────
 async function buildEmailHTML({ type, booking, stylistRow, serviceRow }) {
   const { client_name, service_name, stylist_name, preferred_date, preferred_time, id } = booking;
+  const durationMins = booking.service_duration_mins || (serviceRow ? parseDurationMins(serviceRow.duration) : 0);
 
   const dateLabel = new Date(preferred_date + 'T12:00:00').toLocaleDateString('en-US',
     { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-  const price      = serviceRow ? (serviceRow.price_is_from ? `From $${serviceRow.price}` : `$${serviceRow.price}`) : '';
+  const endTime    = calcEndTime(preferred_time, durationMins);
+  const durLabel   = fmtDuration(durationMins);
+  const priceRaw   = serviceRow ? serviceRow.price : null;
+  const priceLabel = priceRaw
+    ? (priceRaw === 'Varies' ? 'Varies' : (serviceRow.price_is_from ? `From $${priceRaw}` : `$${priceRaw}`))
+    : null;
+
   const photoUrl   = stylistRow && stylistRow.photo_url ? stylistRow.photo_url : '';
   const stylistInitial = stylist_name && stylist_name !== 'Any stylist' ? stylist_name.charAt(0) : '✂';
 
@@ -101,7 +108,7 @@ async function buildEmailHTML({ type, booking, stylistRow, serviceRow }) {
 
   <!-- Header -->
   <tr><td style="background:${bannerColor};padding:32px 32px 24px;text-align:center;">
-    <p style="margin:0 0 4px;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.6);">Chaltus Salon</p>
+    <p style="margin:0 0 4px;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.6);">Chaltu's Salon</p>
     <h1 style="margin:0;font-size:22px;font-weight:600;color:#fff;">${bannerText}</h1>
   </td></tr>
 
@@ -120,28 +127,66 @@ async function buildEmailHTML({ type, booking, stylistRow, serviceRow }) {
     <p style="margin:0;font-size:14px;color:#555;line-height:1.6;">${subText}</p>
   </td></tr>
 
+  <!-- Appointment timing card -->
+  <tr><td style="padding:20px 32px 8px;">
+    <table width="100%" cellpadding="0" cellspacing="0"
+      style="background:linear-gradient(135deg,#1e3a5f,#1e4d3f);border-radius:10px;overflow:hidden;">
+      <tr>
+        <td style="padding:18px 0 18px 20px;text-align:center;width:30%;">
+          <p style="margin:0;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.5);">Starts</p>
+          <p style="margin:4px 0 0;font-size:18px;font-weight:700;color:#7dd3fc;">${preferred_time}</p>
+        </td>
+        <td style="padding:18px 4px;text-align:center;width:8%;color:rgba(255,255,255,0.3);font-size:18px;">→</td>
+        <td style="padding:18px 0;text-align:center;width:30%;">
+          <p style="margin:0;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.5);">Ends</p>
+          <p style="margin:4px 0 0;font-size:18px;font-weight:700;color:#6ee7b7;">${endTime || '—'}</p>
+        </td>
+        <td style="padding:18px 0;text-align:center;width:1%;"><div style="width:1px;height:36px;background:rgba(255,255,255,0.15);"></div></td>
+        <td style="padding:18px 20px 18px 0;text-align:center;width:31%;">
+          <p style="margin:0;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.5);">Duration</p>
+          <p style="margin:4px 0 0;font-size:18px;font-weight:700;color:#fde68a;">${durLabel || '—'}</p>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+
   <!-- Booking details card -->
-  <tr><td style="padding:24px 32px;">
+  <tr><td style="padding:8px 32px;">
     <table width="100%" cellpadding="0" cellspacing="0"
       style="background:#f9f9f9;border-radius:8px;border:1px solid #eee;overflow:hidden;">
       <tr style="border-bottom:1px solid #eee;">
         <td style="padding:12px 16px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#999;width:100px;">Service</td>
-        <td style="padding:12px 16px;font-size:14px;font-weight:600;color:#111;">${service_name}${price ? ` <span style="font-weight:400;color:#888;font-size:13px;">· ${price}</span>` : ''}</td>
+        <td style="padding:12px 16px;font-size:14px;font-weight:600;color:#111;">${service_name}</td>
       </tr>
       <tr style="border-bottom:1px solid #eee;">
         <td style="padding:12px 16px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#999;">Date</td>
         <td style="padding:12px 16px;font-size:14px;font-weight:600;color:#111;">${dateLabel}</td>
       </tr>
-      <tr>
-        <td style="padding:12px 16px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#999;">Time</td>
-        <td style="padding:12px 16px;font-size:14px;font-weight:600;color:#111;">${preferred_time}</td>
+      <tr style="border-bottom:1px solid #eee;">
+        <td style="padding:12px 16px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#999;">Stylist</td>
+        <td style="padding:12px 16px;font-size:14px;color:#111;">${stylist_name === 'Any stylist' ? 'Any available stylist' : stylist_name}</td>
       </tr>
+      ${priceLabel ? `
+      <tr>
+        <td style="padding:12px 16px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#999;">Est. Price</td>
+        <td style="padding:12px 16px;font-size:16px;font-weight:700;color:#b45309;">${priceLabel}</td>
+      </tr>` : ''}
     </table>
   </td></tr>
 
+  <!-- Payment note -->
+  ${priceLabel && type !== 'cancelled' ? `
+  <tr><td style="padding:8px 32px;">
+    <p style="margin:0;padding:10px 14px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;
+              font-size:12px;color:#92400e;line-height:1.5;">
+      <strong>Payment note:</strong> The price above is an estimate based on your selected service.
+      Final payment is collected after your service is complete.
+    </p>
+  </td></tr>` : ''}
+
   ${type === 'cancelled' ? `
   <!-- Rebook CTA -->
-  <tr><td style="padding:0 32px 24px;text-align:center;">
+  <tr><td style="padding:8px 32px 24px;text-align:center;">
     <a href="https://chaltusalon.com/#booking"
        style="display:inline-block;background:#1a1a1a;color:#fff;text-decoration:none;
               padding:12px 28px;border-radius:6px;font-size:14px;font-weight:600;">
@@ -152,7 +197,7 @@ async function buildEmailHTML({ type, booking, stylistRow, serviceRow }) {
   <!-- Footer -->
   <tr><td style="background:#f9f9f9;border-top:1px solid #eee;padding:20px 32px;text-align:center;">
     <p style="margin:0;font-size:13px;color:#888;">
-      <strong style="color:#444;">Chaltus Salon</strong><br>
+      <strong style="color:#444;">Chaltu's Salon</strong><br>
       1524 S State St, Salt Lake City, UT 84115<br>
       <a href="tel:+18013763976" style="color:#444;">(801) 376-3976</a>
     </p>
@@ -174,14 +219,24 @@ async function sendBookingEmails(booking) {
   // Fetch stylist photo + service price in parallel
   const [stylistRes, serviceRes] = await Promise.all([
     pool.query('SELECT * FROM stylists WHERE name = $1 LIMIT 1', [stylist_name]).catch(() => ({ rows: [] })),
-    pool.query('SELECT * FROM services WHERE name = $1 LIMIT 1', [service_name]).catch(() => ({ rows: [] }))
+    pool.query('SELECT * FROM services WHERE LOWER(name) = LOWER($1) LIMIT 1', [service_name]).catch(() => ({ rows: [] }))
   ]);
   const stylistRow = stylistRes.rows[0] || null;
   const serviceRow = serviceRes.rows[0] || null;
 
+  const durationMins = booking.service_duration_mins || (serviceRow ? parseDurationMins(serviceRow.duration) : 0);
+  const endTime      = calcEndTime(preferred_time, durationMins);
+  const durLabel     = fmtDuration(durationMins);
+  const priceRaw     = serviceRow ? serviceRow.price : null;
+  const priceLabel   = priceRaw
+    ? (priceRaw === 'Varies' ? 'Varies' : (serviceRow.price_is_from ? `From $${priceRaw}` : `$${priceRaw}`))
+    : null;
+
+  const timeRange    = endTime ? `${preferred_time} – ${endTime} (${durLabel})` : preferred_time;
+
   // ── Notify Chaltu (plain but clear) ─────────────────────────────────────
   resend.emails.send({
-    from: `Chaltus Salon <${FROM_ADDRESS}>`,
+    from: `Chaltu's Salon <${FROM_ADDRESS}>`,
     to: SALON_EMAIL,
     subject: `New Booking Request #${id} — ${client_name}`,
     html: `
@@ -191,10 +246,10 @@ async function sendBookingEmails(booking) {
           <tr><td style="padding:6px 16px 6px 0;color:#888;width:90px">Client</td><td><strong>${client_name}</strong></td></tr>
           <tr><td style="padding:6px 16px 6px 0;color:#888">Phone</td><td>${client_phone}</td></tr>
           <tr><td style="padding:6px 16px 6px 0;color:#888">Email</td><td>${client_email || '—'}</td></tr>
-          <tr><td style="padding:6px 16px 6px 0;color:#888">Service</td><td>${service_name}</td></tr>
+          <tr><td style="padding:6px 16px 6px 0;color:#888">Service</td><td>${service_name}${priceLabel ? ` — ${priceLabel}` : ''}</td></tr>
           <tr><td style="padding:6px 16px 6px 0;color:#888">Stylist</td><td>${stylist_name}</td></tr>
           <tr><td style="padding:6px 16px 6px 0;color:#888">Date</td><td>${dateLabel}</td></tr>
-          <tr><td style="padding:6px 16px 6px 0;color:#888">Time</td><td>${preferred_time}</td></tr>
+          <tr><td style="padding:6px 16px 6px 0;color:#888">Time</td><td><strong>${timeRange}</strong></td></tr>
           ${message ? `<tr><td style="padding:6px 16px 6px 0;color:#888">Notes</td><td>${message}</td></tr>` : ''}
         </table>
         <p style="margin-top:20px;padding:12px 16px;background:#f5f5f5;border-radius:6px;font-size:13px;color:#555;">
@@ -206,7 +261,7 @@ async function sendBookingEmails(booking) {
 
   // ── Customer SMS ─────────────────────────────────────────────────────────
   sendSMS(client_phone,
-    `Hi ${client_name}, we received your booking request at Chaltus Salon for ${service_name} on ${dateLabel} at ${preferred_time}. We'll be in touch as soon as possible. Questions? Call (801) 376-3976.`
+    `Hi ${client_name}, we received your booking request at Chaltu's Salon for ${service_name} on ${dateLabel} at ${timeRange}. We'll be in touch shortly. Questions? Call (801) 376-3976.`
   );
 
   // ── Customer email receipt ────────────────────────────────────────────────
@@ -513,6 +568,23 @@ const ALL_SLOTS = [
   '2:00 PM','2:30 PM','3:00 PM','3:30 PM',
   '4:00 PM','4:30 PM','5:00 PM','5:30 PM',
 ];
+function calcEndTime(startTime, durationMins) {
+  if (!startTime || !durationMins) return null;
+  const totalMins = timeToMins(startTime) + durationMins;
+  const endH = Math.floor(totalMins / 60) % 24;
+  const endM = totalMins % 60;
+  const period = endH >= 12 ? 'PM' : 'AM';
+  const displayH = endH > 12 ? endH - 12 : (endH === 0 ? 12 : endH);
+  return `${displayH}:${String(endM).padStart(2, '0')} ${period}`;
+}
+function fmtDuration(mins) {
+  if (!mins) return '';
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h === 0) return `${m} min`;
+  if (m === 0) return `${h} hr`;
+  return `${h} hr ${m} min`;
+}
 // Returns all 30-min slots a booking occupies
 function occupiedSlots(startTime, durationMins) {
   const start = timeToMins(startTime);
