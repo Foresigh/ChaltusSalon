@@ -355,7 +355,8 @@ function paymentBadge(received, amount) {
 }
 
 function renderBookingRows(tbody, rows, compact) {
-  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="11" class="empty-state">No bookings found.</td></tr>`; return; }
+  const colspan = compact ? 6 : 11;
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="${colspan}" class="empty-state">No bookings found.</td></tr>`; return; }
   tbody.innerHTML = rows.map(b => `
     <tr class="booking-row" data-id="${b.id}" style="cursor:pointer;">
       ${compact ? '' : `<td>#${b.id}</td>`}
@@ -366,11 +367,11 @@ function renderBookingRows(tbody, rows, compact) {
       <td>${fmt(b.preferred_date)}</td>
       <td><strong>${escHTML(b.preferred_time)}</strong></td>
       <td>${statusBadge(b.status)}</td>
-      <td>
+      ${compact ? '' : `<td>
         <button class="payment-toggle ${b.payment_received ? 'payment-toggle--paid' : ''}" data-id="${b.id}" data-paid="${b.payment_received ? '1':'0'}" data-amount="${b.payment_amount ?? 30}" title="Toggle payment">
           ${b.payment_received ? `✓ $${b.payment_amount ?? 30}` : '$ Mark Paid'}
         </button>
-      </td>
+      </td>`}
       ${compact ? '' : `<td style="max-width:140px;font-size:.78rem;color:var(--gray-500)">${escHTML(b.message)}</td>`}
       <td>
         <div style="display:flex;gap:.25rem;flex-wrap:wrap">
@@ -389,7 +390,7 @@ function renderBookingRows(tbody, rows, compact) {
 
   tbody.querySelectorAll('.booking-row').forEach(row => {
     row.addEventListener('click', e => {
-      if (e.target.closest('.status-select') || e.target.closest('.del-booking')) return;
+      if (e.target.closest('.status-select') || e.target.closest('.del-booking') || e.target.closest('.payment-toggle')) return;
       const id = row.dataset.id;
       const b  = rows.find(r => String(r.id) === id);
       if (b) openBookingModal(b);
@@ -416,17 +417,26 @@ function renderBookingRows(tbody, rows, compact) {
     btn.addEventListener('click', async e => {
       e.stopPropagation();
       const isPaid  = btn.dataset.paid === '1';
-      const amount  = parseInt(btn.dataset.amount, 10) || 30;
+      let amount    = parseInt(btn.dataset.amount, 10) || 30;
       const newPaid = !isPaid;
+
+      // When marking as paid, ask for the actual amount collected
+      if (newPaid) {
+        const input = window.prompt('Amount received ($):', amount);
+        if (input === null) return; // user cancelled
+        const parsed = parseInt(input, 10);
+        if (!isNaN(parsed) && parsed >= 0) amount = parsed;
+      }
+
       const res = await apiFetch(`/api/bookings/${btn.dataset.id}/payment`, {
         method: 'PATCH',
         body: JSON.stringify({ payment_received: newPaid, payment_amount: amount }),
       });
       if (res) {
-        btn.dataset.paid = newPaid ? '1' : '0';
-        btn.textContent  = newPaid ? `✓ $${amount}` : '$ Mark Paid';
+        btn.dataset.paid   = newPaid ? '1' : '0';
+        btn.dataset.amount = amount;
+        btn.textContent    = newPaid ? `✓ $${amount}` : '$ Mark Paid';
         btn.classList.toggle('payment-toggle--paid', newPaid);
-        // Refresh revenue stat
         loadDashboard();
       }
     });
