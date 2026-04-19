@@ -489,52 +489,105 @@ app.delete('/api/services/:id', auth, async (req, res) => {
 // BOOKINGS
 // ════════════════════════════════════════════════════════════════════════════════
 
-// GET /api/availability?date=YYYY-MM-DD&stylist=Name
-// - Specific stylist: returns that stylist's booked slots
-// - No preference / omitted: returns slots where EVERY stylist is booked
+// ── Duration/time helpers ────────────────────────────────────────────────────
+function parseDurationMins(str) {
+  if (!str) return 60;
+  const hrMatch  = str.match(/(\d+)\s*hr/);
+  const minMatch = str.match(/(\d+)\s*min/);
+  return (hrMatch ? parseInt(hrMatch[1], 10) * 60 : 0) +
+         (minMatch ? parseInt(minMatch[1], 10) : 0) || 60;
+}
+function timeToMins(t) {
+  if (!t) return 0;
+  const m = t.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (!m) return 0;
+  let h = parseInt(m[1], 10);
+  const min = parseInt(m[2], 10);
+  if (m[3].toUpperCase() === 'PM' && h !== 12) h += 12;
+  if (m[3].toUpperCase() === 'AM' && h === 12) h = 0;
+  return h * 60 + min;
+}
+const ALL_SLOTS = [
+  '10:00 AM','10:30 AM','11:00 AM','11:30 AM',
+  '12:00 PM','12:30 PM','1:00 PM','1:30 PM',
+  '2:00 PM','2:30 PM','3:00 PM','3:30 PM',
+  '4:00 PM','4:30 PM','5:00 PM','5:30 PM',
+];
+// Returns all 30-min slots a booking occupies
+function occupiedSlots(startTime, durationMins) {
+  const start = timeToMins(startTime);
+  const end   = start + (durationMins || 60);
+  return ALL_SLOTS.filter(s => { const sm = timeToMins(s); return sm >= start && sm < end; });
+}
+
+// GET /api/availability?date=YYYY-MM-DD&stylist=Name&service=ServiceName
+// Returns blocked START slots, fully accounting for service durations
 app.get('/api/availability', async (req, res) => {
-  const { date, stylist } = req.query;
+  const { date, stylist, service } = req.query;
   if (!date) return res.status(400).json({ error: 'date is required' });
   try {
-    if (stylist && stylist !== 'Any stylist') {
-      // Block slots booked by this specific stylist
-      const { rows } = await pool.query(
-        `SELECT preferred_time FROM bookings
-         WHERE preferred_date = $1 AND stylist_name = $2
-           AND status IS DISTINCT FROM 'cancelled'`,
-        [date, stylist]
-      );
-      return res.json({ booked: rows.map(r => r.preferred_time) });
+    // Look up requested service duration
+    let newDurationMins = 60;
+    if (service) {
+      const svc = await pool.query('SELECT duration FROM services WHERE name = $1 LIMIT 1', [service]);
+      if (svc.rows[0]) newDurationMins = parseDurationMins(svc.rows[0].duration);
     }
 
-    // No preference: block a slot only when every stylist is taken
-    // Fetch all stylist names and all bookings for this date in parallel
-    const [stylistRes, bookingRes] = await Promise.all([
-      pool.query(`SELECT name FROM stylists WHERE active = 1`),
-      pool.query(
-        `SELECT preferred_time, stylist_name FROM bookings
-         WHERE preferred_date = $1 AND status IS DISTINCT FROM 'cancelled'
-           AND stylist_name != 'Any stylist'`,
-        [date]
-      )
-    ]);
+    const bookingQuery = stylist && stylist !== 'Any stylist'
+      ? { text: `SELECT preferred_time, service_duration_mins, stylist_name FROM bookings
+                  WHERE preferred_date = $1 AND stylist_name = $2 AND status IS DISTINCT FROM 'cancelled'`,
+          values: [date, stylist] }
+      : { text: `SELECT preferred_time, service_duration_mins, stylist_name FROM bookings
+                  WHERE preferred_date = $1 AND status IS DISTINCT FROM 'cancelled'`,
+          values: [date] };
 
+    const { rows: bookings } = await pool.query(bookingQuery);
+
+    if (stylist && stylist !== 'Any stylist') {
+      // Block any start slot where the new booking would overlap an existing one
+      const invalid = new Set();
+      ALL_SLOTS.forEach(slot => {
+        const newStart = timeToMins(slot);
+        const newEnd   = newStart + newDurationMins;
+        const overlaps = bookings.some(b => {
+          const bStart = timeToMins(b.preferred_time);
+          const bEnd   = bStart + (b.service_duration_mins || 60);
+          return newStart < bEnd && newEnd > bStart;
+        });
+        if (overlaps) invalid.add(slot);
+      });
+      return res.json({ booked: [...invalid], durationMins: newDurationMins });
+    }
+
+    // No stylist preference — block slot only when ALL active stylists are unavailable
+    const stylistRes = await pool.query(`SELECT name FROM stylists WHERE active = 1`);
     const allStylists = stylistRes.rows.map(r => r.name);
     if (allStylists.length === 0) return res.json({ booked: [] });
 
-    // Build a map: time -> Set of booked stylist names
-    const bookedMap = {};
-    bookingRes.rows.forEach(({ preferred_time, stylist_name }) => {
-      if (!bookedMap[preferred_time]) bookedMap[preferred_time] = new Set();
-      bookedMap[preferred_time].add(stylist_name);
+    const stylistOccupied = {};
+    allStylists.forEach(s => { stylistOccupied[s] = new Set(); });
+    bookings.forEach(b => {
+      if (stylistOccupied[b.stylist_name]) {
+        occupiedSlots(b.preferred_time, b.service_duration_mins || 60)
+          .forEach(s => stylistOccupied[b.stylist_name].add(s));
+      }
     });
 
-    // A slot is fully blocked only when every stylist has a booking at that time
-    const fullyBooked = Object.entries(bookedMap)
-      .filter(([, names]) => allStylists.every(s => names.has(s)))
-      .map(([time]) => time);
+    // A start slot is invalid if every stylist would be occupied during the new booking's window
+    const fullyBlocked = ALL_SLOTS.filter(slot => {
+      const newStart = timeToMins(slot);
+      const newEnd   = newStart + newDurationMins;
+      return allStylists.every(stylistName => {
+        const occupied = stylistOccupied[stylistName] || new Set();
+        // Check if any of the new booking's slots are occupied for this stylist
+        return ALL_SLOTS.some(s => {
+          const sm = timeToMins(s);
+          return sm >= newStart && sm < newEnd && occupied.has(s);
+        });
+      });
+    });
 
-    res.json({ booked: fullyBooked });
+    res.json({ booked: fullyBlocked, durationMins: newDurationMins });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -546,13 +599,15 @@ app.post('/api/bookings', async (req, res) => {
             stylist_name = 'Any stylist', preferred_date, preferred_time, message = '' } = req.body;
     if (!client_name || !client_phone || !service_name || !preferred_date || !preferred_time)
       return res.status(400).json({ error: 'Please fill in all required fields.' });
+    // Look up service duration
+    const svcRow = await pool.query('SELECT duration FROM services WHERE name = $1 LIMIT 1', [service_name]);
+    const durationMins = svcRow.rows[0] ? parseDurationMins(svcRow.rows[0].duration) : 60;
     const { rows } = await pool.query(
-      `INSERT INTO bookings (client_name,client_email,client_phone,service_name,stylist_name,preferred_date,preferred_time,message)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
-      [client_name, client_email, client_phone, service_name, stylist_name, preferred_date, preferred_time, message]
+      `INSERT INTO bookings (client_name,client_email,client_phone,service_name,stylist_name,preferred_date,preferred_time,message,service_duration_mins)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+      [client_name, client_email, client_phone, service_name, stylist_name, preferred_date, preferred_time, message, durationMins]
     );
     const booking = rows[0];
-    // Fire-and-forget — don't block the response on email delivery
     sendBookingEmails(booking);
     res.json({ id: booking.id, message: "Booking request received! We'll be in touch as soon as possible." });
   } catch (err) { res.status(500).json({ error: 'Server error' }); }
@@ -644,14 +699,16 @@ app.post('/api/bookings/manual', auth, async (req, res) => {
     if (!client_name || !client_phone || !service_name || !preferred_date || !preferred_time) {
       return res.status(400).json({ error: 'Name, phone, service, date and time are required.' });
     }
+    const svcRow = await pool.query('SELECT duration FROM services WHERE name = $1 LIMIT 1', [service_name]);
+    const durationMins = svcRow.rows[0] ? parseDurationMins(svcRow.rows[0].duration) : 60;
     const { rows } = await pool.query(
       `INSERT INTO bookings
          (client_name, client_email, client_phone, service_name, stylist_name,
-          preferred_date, preferred_time, message, status, payment_received, payment_amount, source)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'admin')
+          preferred_date, preferred_time, message, status, payment_received, payment_amount, source, service_duration_mins)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'admin',$12)
        RETURNING *`,
       [client_name, client_email, client_phone, service_name, stylist_name,
-       preferred_date, preferred_time, message, status, payment_received, payment_amount]
+       preferred_date, preferred_time, message, status, payment_received, payment_amount, durationMins]
     );
     res.json(rows[0]);
   } catch (err) { res.status(500).json({ error: 'Server error' }); }

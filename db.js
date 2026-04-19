@@ -19,9 +19,10 @@ async function initDB() {
   // Migrate existing tables — run each separately so one failure doesn't block the other
   await pool.query(`ALTER TABLE IF EXISTS gallery   ADD COLUMN IF NOT EXISTS url              TEXT    DEFAULT ''`).catch(e => console.warn('migration gallery.url:', e.message));
   await pool.query(`ALTER TABLE IF EXISTS stylists  ADD COLUMN IF NOT EXISTS photo_url         TEXT    DEFAULT ''`).catch(e => console.warn('migration stylists.photo_url:', e.message));
-  await pool.query(`ALTER TABLE IF EXISTS bookings  ADD COLUMN IF NOT EXISTS payment_received  BOOLEAN DEFAULT FALSE`).catch(e => console.warn('migration bookings.payment_received:', e.message));
-  await pool.query(`ALTER TABLE IF EXISTS bookings  ADD COLUMN IF NOT EXISTS payment_amount    INTEGER DEFAULT 30`).catch(e => console.warn('migration bookings.payment_amount:', e.message));
-  await pool.query(`ALTER TABLE IF EXISTS bookings  ADD COLUMN IF NOT EXISTS source            TEXT    DEFAULT 'online'`).catch(e => console.warn('migration bookings.source:', e.message));
+  await pool.query(`ALTER TABLE IF EXISTS bookings  ADD COLUMN IF NOT EXISTS payment_received    BOOLEAN DEFAULT FALSE`).catch(e => console.warn('migration bookings.payment_received:', e.message));
+  await pool.query(`ALTER TABLE IF EXISTS bookings  ADD COLUMN IF NOT EXISTS payment_amount      INTEGER DEFAULT 30`).catch(e => console.warn('migration bookings.payment_amount:', e.message));
+  await pool.query(`ALTER TABLE IF EXISTS bookings  ADD COLUMN IF NOT EXISTS source              TEXT    DEFAULT 'online'`).catch(e => console.warn('migration bookings.source:', e.message));
+  await pool.query(`ALTER TABLE IF EXISTS bookings  ADD COLUMN IF NOT EXISTS service_duration_mins INTEGER DEFAULT 60`).catch(e => console.warn('migration bookings.service_duration_mins:', e.message));
   await pool.query(`
     CREATE TABLE IF NOT EXISTS settings (
       key   TEXT PRIMARY KEY,

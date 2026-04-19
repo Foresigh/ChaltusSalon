@@ -520,12 +520,41 @@ async function loadSchedule() {
   ]);
   if (!stylists || !bookings) return;
 
-  // Build lookup: "stylist|time" -> booking
+  const cols = stylists.map(s => s.name);
+  if (!cols.length) { $('#sched-wrap').innerHTML = '<p class="empty-state">No stylists found.</p>'; return; }
+
+  // Helper: parse "10:00 AM" → minutes
+  function slotToMins(t) {
+    const m = t.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    if (!m) return 0;
+    let h = parseInt(m[1]); const min = parseInt(m[2]);
+    if (m[3].toUpperCase() === 'PM' && h !== 12) h += 12;
+    if (m[3].toUpperCase() === 'AM' && h === 12) h = 0;
+    return h * 60 + min;
+  }
+
+  // Build per-stylist blocked slots (slots already rendered via rowspan)
+  const spanBlocked = {}; // "stylist|slot" -> true means skip rendering (covered by rowspan)
+  cols.forEach(c => { SCHEDULE_SLOTS.forEach(s => { spanBlocked[`${c}|${s}`] = false; }); });
+
+  // Build lookup: "stylist|startTime" -> booking
   const lookup = {};
   bookings.forEach(b => { lookup[`${b.stylist_name}|${b.preferred_time}`] = b; });
 
-  const cols = stylists.map(s => s.name);
-  if (!cols.length) { $('#sched-wrap').innerHTML = '<p class="empty-state">No stylists found.</p>'; return; }
+  // Pre-compute rowspan and mark covered slots
+  const rowspanMap = {}; // "stylist|slot" -> rowspan count
+  bookings.forEach(b => {
+    const durMins  = b.service_duration_mins || 60;
+    const rowSpan  = Math.max(1, Math.ceil(durMins / 30));
+    rowspanMap[`${b.stylist_name}|${b.preferred_time}`] = rowSpan;
+    const startIdx = SCHEDULE_SLOTS.indexOf(b.preferred_time);
+    if (startIdx >= 0) {
+      for (let i = 1; i < rowSpan; i++) {
+        const coveredSlot = SCHEDULE_SLOTS[startIdx + i];
+        if (coveredSlot) spanBlocked[`${b.stylist_name}|${coveredSlot}`] = true;
+      }
+    }
+  });
 
   let html = `<table class="sched-table">
     <thead><tr><th class="sched-time-col">Time</th>${cols.map(c => `<th>${escHTML(c)}</th>`).join('')}</tr></thead>
@@ -534,11 +563,16 @@ async function loadSchedule() {
   SCHEDULE_SLOTS.forEach(slot => {
     html += `<tr><td class="sched-time-cell">${slot}</td>`;
     cols.forEach(stylist => {
-      const b = lookup[`${stylist}|${slot}`];
+      if (spanBlocked[`${stylist}|${slot}`]) return; // skip — covered by rowspan above
+      const b       = lookup[`${stylist}|${slot}`];
+      const rowSpan = b ? (rowspanMap[`${stylist}|${slot}`] || 1) : 1;
+      const rsAttr  = rowSpan > 1 ? ` rowspan="${rowSpan}"` : '';
       if (b) {
-        html += `<td class="sched-cell sched-cell--${b.status}" data-id="${b.id}">
+        const durLabel = b.service_duration_mins ? `${b.service_duration_mins} min` : '';
+        html += `<td class="sched-cell sched-cell--${b.status}"${rsAttr} data-id="${b.id}" style="vertical-align:top;">
           <span class="sched-name">${escHTML(b.client_name)}</span>
           <span class="sched-svc">${escHTML(b.service_name)}</span>
+          ${durLabel ? `<span class="sched-dur">⏱ ${durLabel}</span>` : ''}
           <span class="sched-phone">${escHTML(b.client_phone)}</span>
         </td>`;
       } else {

@@ -461,10 +461,12 @@
       var el = document.getElementById('cal-times');
       el.innerHTML = '<p class="cal-times__hint">Loading…</p>';
       var stylist = (document.getElementById('b-stylist') || {}).value || 'Any stylist';
+      var service = (document.getElementById('b-service') || {}).value || '';
       var booked = [];
       try {
         var r = await fetch('/api/availability?date=' + encodeURIComponent(date) +
-          '&stylist=' + encodeURIComponent(stylist));
+          '&stylist=' + encodeURIComponent(stylist) +
+          '&service=' + encodeURIComponent(service));
         if (r.ok) booked = (await r.json()).booked || [];
       } catch (_) {}
 
@@ -537,9 +539,12 @@
       }
     }
 
-    // Update summary when service changes
+    // Update summary + reload slots when service changes (duration affects availability)
     var serviceEl = document.getElementById('b-service');
-    if (serviceEl) serviceEl.addEventListener('change', updateSummary);
+    if (serviceEl) serviceEl.addEventListener('change', function() {
+      updateSummary();
+      if (state.date) { state.time = ''; loadSlots(state.date); }
+    });
 
 
     /* ---- Submit ---- */
