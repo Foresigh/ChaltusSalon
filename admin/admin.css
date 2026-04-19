@@ -551,6 +551,81 @@ tbody tr:hover td { background: var(--gray-50); }
 .status--completed { background: #e9e9e9; color: #444; }
 .status--cancelled { background: #f8d7da; color: #842029; }
 
+/* ── Appointment time cell (booking table) ────────────────── */
+.appt-time-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  flex-wrap: nowrap;
+}
+.appt-time-start { color: #1e40af; }
+.appt-time-arrow { color: #94a3b8; font-size: 0.75rem; }
+.appt-time-end   { color: #065f46; }
+.appt-duration-pill {
+  display: inline-block;
+  margin-top: 0.25rem;
+  padding: 0.1em 0.55em;
+  border-radius: 20px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+/* ── Appointment timing card (booking detail modal) ────────── */
+.appt-timing-card {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: linear-gradient(135deg, #1e3a5f 0%, #1e4d3f 100%);
+  border-radius: 14px;
+  padding: 1.1rem 1.4rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  row-gap: 0.75rem;
+}
+.appt-timing-card__block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 70px;
+}
+.appt-timing-card__arrow {
+  color: rgba(255,255,255,0.4);
+  font-size: 1.1rem;
+  padding: 0 0.3rem;
+  margin-bottom: 0.5rem;
+}
+.appt-timing-card__divider {
+  width: 1px;
+  height: 40px;
+  background: rgba(255,255,255,0.15);
+  margin: 0 0.6rem;
+  align-self: center;
+}
+.atc-label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 0.2rem;
+}
+.atc-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+.appt-timing-card__block--start .atc-value  { color: #7dd3fc; }
+.appt-timing-card__block--end .atc-value    { color: #6ee7b7; }
+.appt-timing-card__block--duration .atc-value { color: #fde68a; }
+.appt-timing-card__block--price .atc-value  { color: #fca5a5; }
+
 /* ── Payment toggle ───────────────────────────────────────── */
 .payment-toggle {
   display: inline-flex;

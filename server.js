@@ -625,9 +625,11 @@ app.get('/api/bookings', auth, async (req, res) => {
     const order = sort === 'created_at_desc'
       ? 'ORDER BY created_at DESC'
       : 'ORDER BY preferred_date ASC, preferred_time ASC, created_at DESC';
-    const sql = 'SELECT * FROM bookings' +
-      (where.length ? ' WHERE ' + where.join(' AND ') : '') +
-      ' ' + order;
+    const whereClause = where.length ? ' WHERE ' + where.join(' AND ') : '';
+    const sql = `SELECT b.*, s.price AS service_price, s.price_is_from
+                 FROM bookings b
+                 LEFT JOIN services s ON LOWER(s.name) = LOWER(b.service_name)
+                 ${whereClause} ${order}`;
     const { rows } = await pool.query(sql, params);
     res.json(rows);
   } catch (err) { res.status(500).json({ error: 'Server error' }); }
@@ -746,7 +748,10 @@ app.get('/api/stats', auth, async (_req, res) => {
       pool.query("SELECT COUNT(*) AS c FROM bookings WHERE status='confirmed'"),
       pool.query("SELECT COUNT(*) AS c FROM bookings WHERE status='completed'"),
       pool.query('SELECT COUNT(*) AS c FROM bookings WHERE preferred_date = $1', [today]),
-      pool.query('SELECT * FROM bookings ORDER BY created_at DESC LIMIT 8'),
+      pool.query(`SELECT b.*, s.price AS service_price, s.price_is_from
+                  FROM bookings b
+                  LEFT JOIN services s ON LOWER(s.name) = LOWER(b.service_name)
+                  ORDER BY b.created_at DESC LIMIT 8`),
       pool.query(`
         SELECT DATE(created_at) AS day, COUNT(*) AS c
         FROM bookings

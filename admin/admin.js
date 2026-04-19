@@ -354,6 +354,37 @@ function paymentBadge(received, amount) {
   return `<span class="payment-badge payment-badge--unpaid">Unpaid</span>`;
 }
 
+function fmtDuration(mins) {
+  if (!mins) return '';
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h === 0) return `${m}min`;
+  if (m === 0) return `${h}hr`;
+  return `${h}hr ${m}min`;
+}
+
+function calcEndTime(startTime, durationMins) {
+  if (!startTime || !durationMins) return null;
+  const match = startTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (!match) return null;
+  let hours = parseInt(match[1], 10);
+  const mins = parseInt(match[2], 10);
+  const period = match[3].toUpperCase();
+  if (period === 'PM' && hours !== 12) hours += 12;
+  if (period === 'AM' && hours === 12) hours = 0;
+  const totalMins = hours * 60 + mins + durationMins;
+  const endH = Math.floor(totalMins / 60) % 24;
+  const endM = totalMins % 60;
+  const endPeriod = endH >= 12 ? 'PM' : 'AM';
+  const displayH = endH > 12 ? endH - 12 : (endH === 0 ? 12 : endH);
+  return `${displayH}:${String(endM).padStart(2, '0')} ${endPeriod}`;
+}
+
+function fmtPrice(price, priceIsFrom) {
+  if (!price || price === 'Varies') return price || '—';
+  return (priceIsFrom ? 'From $' : '$') + price;
+}
+
 function renderBookingRows(tbody, rows, compact) {
   const colspan = compact ? 6 : 11;
   if (!rows.length) { tbody.innerHTML = `<tr><td colspan="${colspan}" class="empty-state">No bookings found.</td></tr>`; return; }
@@ -365,7 +396,15 @@ function renderBookingRows(tbody, rows, compact) {
       <td>${escHTML(b.service_name)}</td>
       ${compact ? '' : `<td>${escHTML(b.stylist_name)}</td>`}
       <td>${fmt(b.preferred_date)}</td>
-      <td><strong>${escHTML(b.preferred_time)}</strong></td>
+      <td>
+        <div class="appt-time-cell">
+          <span class="appt-time-start">${escHTML(b.preferred_time)}</span>
+          ${calcEndTime(b.preferred_time, b.service_duration_mins) ? `
+            <span class="appt-time-arrow">→</span>
+            <span class="appt-time-end">${calcEndTime(b.preferred_time, b.service_duration_mins)}</span>` : ''}
+        </div>
+        ${b.service_duration_mins ? `<span class="appt-duration-pill">${fmtDuration(b.service_duration_mins)}</span>` : ''}
+      </td>
       <td>${statusBadge(b.status)}</td>
       ${compact ? '' : `<td>
         <button class="payment-toggle ${b.payment_received ? 'payment-toggle--paid' : ''}" data-id="${b.id}" data-paid="${b.payment_received ? '1':'0'}" data-amount="${b.payment_amount ?? 30}" title="Toggle payment">
@@ -618,7 +657,31 @@ function openBookingModal(b) {
   $('#modal-status-select').value = b.status;
   const dateLabel = new Date(b.preferred_date + 'T00:00:00').toLocaleDateString('en-US',
     { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  const endTime   = calcEndTime(b.preferred_time, b.service_duration_mins);
+  const durLabel  = fmtDuration(b.service_duration_mins);
+  const priceLabel = fmtPrice(b.service_price, b.price_is_from);
+
   $('#modal-body').innerHTML = `
+    <div class="appt-timing-card">
+      <div class="appt-timing-card__block appt-timing-card__block--start">
+        <span class="atc-label">Starts</span>
+        <span class="atc-value">${escHTML(b.preferred_time)}</span>
+      </div>
+      <div class="appt-timing-card__arrow">→</div>
+      <div class="appt-timing-card__block appt-timing-card__block--end">
+        <span class="atc-label">Ends</span>
+        <span class="atc-value">${endTime || '—'}</span>
+      </div>
+      <div class="appt-timing-card__divider"></div>
+      <div class="appt-timing-card__block appt-timing-card__block--duration">
+        <span class="atc-label">Duration</span>
+        <span class="atc-value">${durLabel || '—'}</span>
+      </div>
+      <div class="appt-timing-card__block appt-timing-card__block--price">
+        <span class="atc-label">Price</span>
+        <span class="atc-value">${escHTML(priceLabel)}</span>
+      </div>
+    </div>
     <div class="modal-detail-grid">
       <div class="modal-detail-row"><span class="modal-detail-key">Client</span><span class="modal-detail-val"><strong>${escHTML(b.client_name)}</strong></span></div>
       <div class="modal-detail-row"><span class="modal-detail-key">Phone</span><span class="modal-detail-val"><a href="tel:${escHTML(b.client_phone)}">${escHTML(b.client_phone)}</a></span></div>
@@ -626,8 +689,8 @@ function openBookingModal(b) {
       <div class="modal-detail-row"><span class="modal-detail-key">Service</span><span class="modal-detail-val">${escHTML(b.service_name)}</span></div>
       <div class="modal-detail-row"><span class="modal-detail-key">Stylist</span><span class="modal-detail-val">${escHTML(b.stylist_name)}</span></div>
       <div class="modal-detail-row"><span class="modal-detail-key">Date</span><span class="modal-detail-val">${dateLabel}</span></div>
-      <div class="modal-detail-row"><span class="modal-detail-key">Time</span><span class="modal-detail-val"><strong>${escHTML(b.preferred_time)}</strong></span></div>
       <div class="modal-detail-row"><span class="modal-detail-key">Status</span><span class="modal-detail-val">${statusBadge(b.status)}</span></div>
+      ${b.payment_received ? `<div class="modal-detail-row"><span class="modal-detail-key">Payment</span><span class="modal-detail-val">${paymentBadge(b.payment_received, b.payment_amount)}</span></div>` : ''}
       ${b.message ? `<div class="modal-detail-row"><span class="modal-detail-key">Notes</span><span class="modal-detail-val">${escHTML(b.message)}</span></div>` : ''}
       <div class="modal-detail-row"><span class="modal-detail-key">Booked</span><span class="modal-detail-val">${new Date(b.created_at).toLocaleString('en-US')}</span></div>
     </div>`;
