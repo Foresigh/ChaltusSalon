@@ -8,6 +8,24 @@
   'use strict';
 
   /* ====================================================
+     0. ANCHOR SCROLL FIX — correct offset on direct load
+        e.g. chaltusalon.com/#booking on mobile
+     ==================================================== */
+  if (window.location.hash) {
+    window.addEventListener('load', function () {
+      var id = window.location.hash.slice(1);
+      var target = document.getElementById(id);
+      if (target) {
+        var headerH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--header-h')) || 68;
+        setTimeout(function () {
+          var top = target.getBoundingClientRect().top + window.scrollY - headerH;
+          window.scrollTo({ top: top, behavior: 'auto' });
+        }, 100);
+      }
+    });
+  }
+
+  /* ====================================================
      1. HEADER: scroll state (transparent → dark)
      ==================================================== */
   const header     = document.getElementById('site-header');
@@ -60,8 +78,26 @@
   }
 
   // Close mobile nav when any link is clicked
+  // For anchor links, wait for the nav transition to finish before scrolling
   mobileLinks.forEach(function (link) {
-    link.addEventListener('click', closeNav);
+    link.addEventListener('click', function (e) {
+      var href = link.getAttribute('href') || '';
+      var hash = href.indexOf('#') !== -1 ? href.split('#')[1] : null;
+      var target = hash ? document.getElementById(hash) : null;
+
+      if (target) {
+        e.preventDefault();
+        closeNav();
+        // Wait for the overlay fade-out transition (~220ms) then scroll
+        setTimeout(function () {
+          var headerH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--header-h')) || 68;
+          var top = target.getBoundingClientRect().top + window.scrollY - headerH;
+          window.scrollTo({ top: top, behavior: 'smooth' });
+        }, 240);
+      } else {
+        closeNav();
+      }
+    });
   });
 
   // Close on Escape key
