@@ -237,11 +237,7 @@ async function sendBookingEmails(booking) {
   const timeRange    = endTime ? `${preferred_time} – ${endTime} (${durLabel})` : preferred_time;
 
   // ── Notify Chaltu (plain but clear) ─────────────────────────────────────
-  resend.emails.send({
-    from: `Chaltu's Salon <${FROM_ADDRESS}>`,
-    to: SALON_EMAIL,
-    subject: `New Booking Request #${id} — ${client_name}`,
-    html: `
+  const salonHtml = `
       <div style="font-family:sans-serif;max-width:520px;color:#111;padding:24px;">
         <h2 style="margin:0 0 16px;font-size:20px;">New Booking Request #${id}</h2>
         <table style="border-collapse:collapse;font-size:15px;width:100%">
@@ -258,8 +254,17 @@ async function sendBookingEmails(booking) {
           Log into the admin panel to confirm or cancel this booking.
         </p>
       </div>
-    `
-  }).then(() => console.log('✔  Salon notification sent')).catch(e => console.error('✗  Salon email failed:', e.message));
+    `;
+  for (const addr of SALON_EMAIL) {
+    const { error } = await resend.emails.send({
+      from: `Chaltu's Salon <${FROM_ADDRESS}>`,
+      to: addr,
+      subject: `New Booking Request #${id} — ${client_name}`,
+      html: salonHtml,
+    });
+    if (error) console.error(`✗  Salon email failed (${addr}):`, error.message ?? error);
+    else       console.log(`✔  Salon notification sent to ${addr}`);
+  }
 
   // ── Customer SMS ─────────────────────────────────────────────────────────
   sendSMS(client_phone,
@@ -269,13 +274,14 @@ async function sendBookingEmails(booking) {
   // ── Customer email receipt ────────────────────────────────────────────────
   if (!client_email) return;
   const html = await buildEmailHTML({ type: 'pending', booking, stylistRow, serviceRow });
-  resend.emails.send({
+  const { error: custErr } = await resend.emails.send({
     from: `Chaltus Salon <${FROM_ADDRESS}>`,
     to: client_email,
     subject: `We received your request — ${dateLabel}`,
-    html
-  }).then(() => console.log('✔  Customer confirmation sent to', client_email))
-    .catch(e => console.error('✗  Customer email failed:', e.message));
+    html,
+  });
+  if (custErr) console.error('✗  Customer email failed:', custErr.message ?? custErr);
+  else         console.log('✔  Customer confirmation sent to', client_email);
 }
 const JWT_SECRET    = process.env.JWT_SECRET || 'chaltus-salon-2024-change-in-prod';
 const USE_CLOUDINARY = !!process.env.CLOUDINARY_URL;
@@ -752,15 +758,16 @@ app.patch('/api/bookings/:id', auth, async (req, res) => {
           serviceRow: serviceRes.rows[0] || null
         });
 
-        resend.emails.send({
+        const { error: statusErr } = await resend.emails.send({
           from: `Chaltus Salon <${FROM_ADDRESS}>`,
           to: b.client_email,
           subject: req.body.status === 'confirmed'
             ? `Your appointment is confirmed — ${dateLabel}`
             : `Your appointment has been cancelled — ${dateLabel}`,
-          html
-        }).then(() => console.log(`✔  ${req.body.status} email sent to`, b.client_email))
-          .catch(e => console.error(`✗  Status email failed:`, e.message));
+          html,
+        });
+        if (statusErr) console.error(`✗  Status email failed:`, statusErr.message ?? statusErr);
+        else           console.log(`✔  ${req.body.status} email sent to`, b.client_email);
 
         // SMS
         if (req.body.status === 'confirmed') {
