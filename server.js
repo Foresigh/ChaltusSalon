@@ -707,6 +707,23 @@ app.get('/api/bookings', auth, async (req, res) => {
   } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 
+// Reschedule a booking (date, start time, duration)
+app.patch('/api/bookings/:id/reschedule', auth, async (req, res) => {
+  try {
+    const { preferred_date, preferred_time, service_duration_mins } = req.body;
+    if (!preferred_date || !preferred_time || !service_duration_mins) {
+      return res.status(400).json({ error: 'date, time and duration are required' });
+    }
+    const { rows } = await pool.query(
+      `UPDATE bookings SET preferred_date=$1, preferred_time=$2, service_duration_mins=$3
+       WHERE id=$4 RETURNING *`,
+      [preferred_date, preferred_time, service_duration_mins, req.params.id]
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'Not found' });
+    res.json(rows[0]);
+  } catch (err) { res.status(500).json({ error: 'Server error' }); }
+});
+
 app.patch('/api/bookings/:id', auth, async (req, res) => {
   try {
     const valid = ['pending', 'confirmed', 'completed', 'cancelled'];

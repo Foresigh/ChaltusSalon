@@ -1005,6 +1005,70 @@ textarea { resize: vertical; }
 .modal-detail-key { min-width:70px; color:var(--gray-400); font-size:.78rem; text-transform:uppercase; letter-spacing:.04em; flex-shrink:0; }
 .modal-detail-val { color:var(--gray-800); } .modal-detail-val a { color:var(--black); text-decoration:underline; }
 
+/* ── Modal payment box ─────────────────────────────────────── */
+.modal-payment-box {
+  margin-top: 1rem;
+  background: #f9fafb;
+  border: 1px solid var(--gray-100);
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+}
+.modal-payment-box__title {
+  font-size: .72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--gray-400); margin-bottom: .75rem;
+}
+.modal-payment-box__row { display:flex; align-items:center; gap:.75rem; margin-bottom:.65rem; }
+.modal-payment-box__label { font-size:.78rem; color:var(--gray-500); min-width:60px; }
+.modal-pay-input { width:100px; padding:.3rem .5rem; border:1px solid var(--gray-200); border-radius:6px; font-size:.85rem; }
+.modal-pay-btn {
+  padding:.35em .9em; border-radius:20px; font-size:.75rem; font-weight:600;
+  border:1px solid rgba(184,155,106,.4); background:rgba(184,155,106,.08);
+  color:#b89b6a; cursor:pointer; transition:all .18s;
+}
+.modal-pay-btn--paid { background:rgba(16,185,129,.12); border-color:rgba(16,185,129,.35); color:#10b981; }
+.modal-payment-box__note { font-size:.7rem; color:var(--gray-400); margin-top:.25rem; }
+
+/* ── Modal reschedule box ──────────────────────────────────── */
+.modal-reschedule-box {
+  margin-top: 1rem;
+  background: #f0f4ff;
+  border: 1px solid #c7d4f8;
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+}
+.modal-reschedule-box__title {
+  font-size: .72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: #6272b0; margin-bottom: .85rem;
+}
+.modal-reschedule-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .6rem .75rem;
+  margin-bottom: .85rem;
+}
+.modal-reschedule-field label {
+  display: block; font-size: .72rem; font-weight: 600;
+  color: var(--gray-500); margin-bottom: .25rem;
+}
+.modal-reschedule-field input[type="date"],
+.modal-reschedule-field select {
+  width: 100%; padding: .38rem .55rem;
+  border: 1px solid #c7d4f8; border-radius: 7px;
+  font-size: .82rem; background: #fff; color: var(--gray-800);
+}
+.modal-reschedule-field input[type="date"]:focus,
+.modal-reschedule-field select:focus { outline: none; border-color: #6272b0; }
+.modal-reschedule-field--dur { display:flex; flex-direction:column; }
+.modal-rs-dur-badge {
+  display: inline-flex; align-items: center;
+  padding: .22em .7em; border-radius: 20px;
+  background: #fef3c7; color: #92400e;
+  border: 1px solid #fde68a; font-size: .72rem; font-weight: 700;
+  margin-top: auto; align-self: flex-start;
+}
+.modal-rs-err { font-size:.78rem; color:#c0392b; margin-bottom:.5rem; }
+.btn-sm { padding:.35em .85em; font-size:.8rem; }
+
 /* ── Square Setup Card ─────────────────────────────────────── */
 .setup-card { margin-top: 1.5rem; }
 

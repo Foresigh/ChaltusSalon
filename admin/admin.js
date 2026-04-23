@@ -349,6 +349,24 @@ async function populateStylistFilter() {
   });
 }
 
+const ALL_SLOTS = [
+  '10:00 AM','10:30 AM','11:00 AM','11:30 AM',
+  '12:00 PM','12:30 PM','1:00 PM','1:30 PM',
+  '2:00 PM','2:30 PM','3:00 PM','3:30 PM',
+  '4:00 PM','4:30 PM','5:00 PM','5:30 PM',
+];
+
+function timeToMins(t) {
+  if (!t) return 0;
+  const m = t.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (!m) return 0;
+  let h = parseInt(m[1], 10);
+  const min = parseInt(m[2], 10);
+  if (m[3].toUpperCase() === 'PM' && h !== 12) h += 12;
+  if (m[3].toUpperCase() === 'AM' && h === 12) h = 0;
+  return h * 60 + min;
+}
+
 function paymentBadge(received, amount) {
   if (received) return `<span class="payment-badge payment-badge--paid">✓ $${amount ?? 30} Paid</span>`;
   return `<span class="payment-badge payment-badge--unpaid">Unpaid</span>`;
@@ -456,25 +474,17 @@ function renderBookingRows(tbody, rows, compact) {
     btn.addEventListener('click', async e => {
       e.stopPropagation();
       const isPaid  = btn.dataset.paid === '1';
-      let amount    = parseInt(btn.dataset.amount, 10) || 30;
+      const amount  = parseInt(btn.dataset.amount, 10) || 30;
       const newPaid = !isPaid;
-
-      // When marking as paid, ask for the actual amount collected
-      if (newPaid) {
-        const input = window.prompt('Amount received ($):', amount);
-        if (input === null) return; // user cancelled
-        const parsed = parseInt(input, 10);
-        if (!isNaN(parsed) && parsed >= 0) amount = parsed;
-      }
-
+      btn.disabled = true;
       const res = await apiFetch(`/api/bookings/${btn.dataset.id}/payment`, {
         method: 'PATCH',
         body: JSON.stringify({ payment_received: newPaid, payment_amount: amount }),
       });
-      if (res) {
-        btn.dataset.paid   = newPaid ? '1' : '0';
-        btn.dataset.amount = amount;
-        btn.textContent    = newPaid ? `✓ $${amount}` : '$ Mark Paid';
+      btn.disabled = false;
+      if (res && res.id) {
+        btn.dataset.paid  = newPaid ? '1' : '0';
+        btn.textContent   = newPaid ? `✓ $${amount}` : '$ Mark Paid';
         btn.classList.toggle('payment-toggle--paid', newPaid);
         loadDashboard();
       }
@@ -690,10 +700,122 @@ function openBookingModal(b) {
       <div class="modal-detail-row"><span class="modal-detail-key">Stylist</span><span class="modal-detail-val">${escHTML(b.stylist_name)}</span></div>
       <div class="modal-detail-row"><span class="modal-detail-key">Date</span><span class="modal-detail-val">${dateLabel}</span></div>
       <div class="modal-detail-row"><span class="modal-detail-key">Status</span><span class="modal-detail-val">${statusBadge(b.status)}</span></div>
-      ${b.payment_received ? `<div class="modal-detail-row"><span class="modal-detail-key">Payment</span><span class="modal-detail-val">${paymentBadge(b.payment_received, b.payment_amount)}</span></div>` : ''}
       ${b.message ? `<div class="modal-detail-row"><span class="modal-detail-key">Notes</span><span class="modal-detail-val">${escHTML(b.message)}</span></div>` : ''}
       <div class="modal-detail-row"><span class="modal-detail-key">Booked</span><span class="modal-detail-val">${new Date(b.created_at).toLocaleString('en-US')}</span></div>
+    </div>
+
+    <div class="modal-payment-box" id="modal-payment-box">
+      <div class="modal-payment-box__title">Payment Collected</div>
+      <div class="modal-payment-box__row">
+        <span class="modal-payment-box__label">Amount ($)</span>
+        <input type="number" id="modal-pay-amount" class="modal-pay-input"
+               value="${b.payment_amount || b.service_price || ''}"
+               min="0" placeholder="e.g. 150" />
+      </div>
+      <div class="modal-payment-box__row">
+        <span class="modal-payment-box__label">Status</span>
+        <button id="modal-pay-btn" class="modal-pay-btn ${b.payment_received ? 'modal-pay-btn--paid' : ''}">
+          ${b.payment_received ? `✓ Paid  $${b.payment_amount ?? ''}` : 'Mark as Paid'}
+        </button>
+      </div>
+      <p class="modal-payment-box__note">Payment is collected in person after the service is complete.</p>
+    </div>
+
+    <div class="modal-reschedule-box" id="modal-reschedule-box">
+      <div class="modal-reschedule-box__title">Reschedule</div>
+      <div class="modal-reschedule-grid">
+        <div class="modal-reschedule-field">
+          <label>Date</label>
+          <input type="date" id="modal-rs-date" value="${b.preferred_date}" />
+        </div>
+        <div class="modal-reschedule-field">
+          <label>Start Time</label>
+          <select id="modal-rs-start">${ALL_SLOTS.map(s =>
+            `<option value="${s}"${s === b.preferred_time ? ' selected' : ''}>${s}</option>`
+          ).join('')}</select>
+        </div>
+        <div class="modal-reschedule-field">
+          <label>End Time</label>
+          <select id="modal-rs-end">${ALL_SLOTS.map(s =>
+            `<option value="${s}"${s === endTime ? ' selected' : ''}>${s}</option>`
+          ).join('')}</select>
+        </div>
+        <div class="modal-reschedule-field modal-reschedule-field--dur">
+          <label>Duration</label>
+          <span id="modal-rs-dur" class="modal-rs-dur-badge">${durLabel || '—'}</span>
+        </div>
+      </div>
+      <div id="modal-rs-err" class="modal-rs-err" hidden></div>
+      <button class="btn btn-primary btn-sm" id="modal-rs-save">Save Changes</button>
     </div>`;
+
+  // Payment toggle inside the modal
+  let modalPaid   = !!b.payment_received;
+  let modalAmount = b.payment_amount || parseInt(b.service_price, 10) || 0;
+  const payBtn    = $('#modal-pay-btn');
+  payBtn.addEventListener('click', async () => {
+    const inputVal = parseInt($('#modal-pay-amount').value, 10);
+    if (!isNaN(inputVal) && inputVal >= 0) modalAmount = inputVal;
+    const newPaid = !modalPaid;
+    payBtn.disabled = true;
+    const res = await apiFetch(`/api/bookings/${b.id}/payment`, {
+      method: 'PATCH',
+      body: JSON.stringify({ payment_received: newPaid, payment_amount: modalAmount }),
+    });
+    payBtn.disabled = false;
+    if (res && res.id) {
+      modalPaid = newPaid;
+      payBtn.textContent = newPaid ? `✓ Paid  $${modalAmount}` : 'Mark as Paid';
+      payBtn.classList.toggle('modal-pay-btn--paid', newPaid);
+      loadDashboard();
+      loadBookings();
+    }
+  });
+
+  // Reschedule — live duration update
+  function updateRsDuration() {
+    const start = $('#modal-rs-start').value;
+    const end   = $('#modal-rs-end').value;
+    const durEl = $('#modal-rs-dur');
+    const diff  = timeToMins(end) - timeToMins(start);
+    if (durEl) durEl.textContent = diff > 0 ? fmtDuration(diff) : '—';
+  }
+  $('#modal-rs-start').addEventListener('change', updateRsDuration);
+  $('#modal-rs-end').addEventListener('change', updateRsDuration);
+  updateRsDuration();
+
+  // Reschedule save
+  $('#modal-rs-save').addEventListener('click', async () => {
+    const date  = $('#modal-rs-date').value;
+    const start = $('#modal-rs-start').value;
+    const end   = $('#modal-rs-end').value;
+    const errEl = $('#modal-rs-err');
+    const diff  = timeToMins(end) - timeToMins(start);
+    if (!date)      { errEl.textContent = 'Please select a date.';              errEl.hidden = false; return; }
+    if (diff <= 0)  { errEl.textContent = 'End time must be after start time.'; errEl.hidden = false; return; }
+    errEl.hidden = true;
+    $('#modal-rs-save').disabled = true;
+    $('#modal-rs-save').textContent = 'Saving…';
+    const res = await apiFetch(`/api/bookings/${b.id}/reschedule`, {
+      method: 'PATCH',
+      body: JSON.stringify({ preferred_date: date, preferred_time: start, service_duration_mins: diff }),
+    });
+    $('#modal-rs-save').disabled = false;
+    $('#modal-rs-save').textContent = 'Save Changes';
+    if (res && res.id) {
+      // Update the timing card in the modal to reflect new times
+      const newEnd = calcEndTime(start, diff);
+      $('#booking-modal').querySelector('.appt-timing-card__block--start .atc-value').textContent = start;
+      $('#booking-modal').querySelector('.appt-timing-card__block--end .atc-value').textContent   = newEnd || '—';
+      $('#booking-modal').querySelector('.appt-timing-card__block--duration .atc-value').textContent = fmtDuration(diff);
+      loadBookings();
+      loadDashboard();
+    } else {
+      errEl.textContent = (res && res.error) || 'Failed to save.';
+      errEl.hidden = false;
+    }
+  });
+
   $('#booking-modal').hidden = false;
 }
 
