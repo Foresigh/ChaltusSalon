@@ -355,6 +355,11 @@ const ALL_SLOTS = [
   '2:00 PM','2:30 PM','3:00 PM','3:30 PM',
   '4:00 PM','4:30 PM','5:00 PM','5:30 PM',
 ];
+// End-time options extend beyond business hours to cover long appointments
+const END_SLOTS = [
+  ...ALL_SLOTS,
+  '6:00 PM','6:30 PM','7:00 PM','7:30 PM','8:00 PM',
+];
 
 function timeToMins(t) {
   if (!t) return 0;
@@ -736,9 +741,16 @@ function openBookingModal(b) {
         </div>
         <div class="modal-reschedule-field">
           <label>End Time</label>
-          <select id="modal-rs-end">${ALL_SLOTS.map(s =>
-            `<option value="${s}"${s === endTime ? ' selected' : ''}>${s}</option>`
-          ).join('')}</select>
+          <select id="modal-rs-end">${(() => {
+            // Default: calculated end, or 30 min after start for bookings without duration
+            const defaultEnd = endTime || calcEndTime(b.preferred_time, 30);
+            // Include defaultEnd even if it falls outside END_SLOTS (e.g. 8:30 PM)
+            const opts = END_SLOTS.includes(defaultEnd) ? END_SLOTS
+              : [...END_SLOTS, defaultEnd].sort((a, z) => timeToMins(a) - timeToMins(z));
+            return opts.map(s =>
+              `<option value="${s}"${s === defaultEnd ? ' selected' : ''}>${s}</option>`
+            ).join('');
+          })()}</select>
         </div>
         <div class="modal-reschedule-field modal-reschedule-field--dur">
           <label>Duration</label>

@@ -22,12 +22,14 @@ const PORT = process.env.PORT || 3000;
 
 // ── Email setup (Resend) ─────────────────────────────────────────────────────
 const RESEND_KEY      = process.env.RESEND_API_KEY || '';
-const SALON_EMAIL     = process.env.SALON_NOTIFY_EMAIL || process.env.EMAIL_USER || '';
+// SALON_NOTIFY_EMAIL can be a single address or comma-separated list
+const SALON_EMAIL     = (process.env.SALON_NOTIFY_EMAIL || process.env.EMAIL_USER || '')
+  .split(',').map(e => e.trim()).filter(Boolean);
 const resend          = RESEND_KEY ? new Resend(RESEND_KEY) : null;
 const FROM_ADDRESS    = process.env.FROM_EMAIL || 'onboarding@resend.dev';
 
 if (resend) {
-  console.log('✔  Email configured via Resend — notifications → ', SALON_EMAIL);
+  console.log('✔  Email configured via Resend — notifications → ', SALON_EMAIL.join(', '));
 } else {
   console.warn('⚠  RESEND_API_KEY not set — email notifications are disabled');
 }
