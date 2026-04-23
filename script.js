@@ -8,24 +8,6 @@
   'use strict';
 
   /* ====================================================
-     0. ANCHOR SCROLL FIX — correct offset on direct load
-        e.g. chaltusalon.com/#booking on mobile
-     ==================================================== */
-  if (window.location.hash) {
-    window.addEventListener('load', function () {
-      var id = window.location.hash.slice(1);
-      var target = document.getElementById(id);
-      if (target) {
-        var headerH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--header-h')) || 68;
-        setTimeout(function () {
-          var top = target.getBoundingClientRect().top + window.scrollY - headerH;
-          window.scrollTo({ top: top, behavior: 'auto' });
-        }, 100);
-      }
-    });
-  }
-
-  /* ====================================================
      1. HEADER: scroll state (transparent → dark)
      ==================================================== */
   const header     = document.getElementById('site-header');
@@ -78,26 +60,9 @@
   }
 
   // Close mobile nav when any link is clicked
-  // For anchor links, wait for the nav transition to finish before scrolling
+  // (section 6 handles the actual smooth scroll with header offset)
   mobileLinks.forEach(function (link) {
-    link.addEventListener('click', function (e) {
-      var href = link.getAttribute('href') || '';
-      var hash = href.indexOf('#') !== -1 ? href.split('#')[1] : null;
-      var target = hash ? document.getElementById(hash) : null;
-
-      if (target) {
-        e.preventDefault();
-        closeNav();
-        // Wait for the overlay fade-out transition (~220ms) then scroll
-        setTimeout(function () {
-          var headerH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--header-h')) || 68;
-          var top = target.getBoundingClientRect().top + window.scrollY - headerH;
-          window.scrollTo({ top: top, behavior: 'smooth' });
-        }, 240);
-      } else {
-        closeNav();
-      }
-    });
+    link.addEventListener('click', closeNav);
   });
 
   // Close on Escape key
@@ -872,9 +837,16 @@
     pillObserver.observe(bookingEl);
   }
 
-  window.bookWithStylist = function (name) {
+  function scrollToBooking() {
     var bookingSection = document.getElementById('booking');
-    if (bookingSection) bookingSection.scrollIntoView({ behavior: 'smooth' });
+    if (!bookingSection) return;
+    var headerHeight = header ? header.offsetHeight : 68;
+    var top = bookingSection.getBoundingClientRect().top + window.scrollY - headerHeight;
+    window.scrollTo({ top: top, behavior: 'smooth' });
+  }
+
+  window.bookWithStylist = function (name) {
+    scrollToBooking();
     // Wait a tick for scroll, then click the matching dropdown item
     setTimeout(function () {
       var list = document.querySelector('#stylist-dd .stylist-dd__list');
@@ -908,7 +880,7 @@
     if (!keyword) return;
     e.preventDefault();
     var bookingSection = document.getElementById('booking');
-    if (bookingSection) bookingSection.scrollIntoView({ behavior: 'smooth' });
+    scrollToBooking();
     setTimeout(function () { selectServiceInDropdown(keyword); }, 350);
   }
 
