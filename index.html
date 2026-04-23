@@ -1021,6 +1021,29 @@
               <div id="booking-error"   class="bk-alert bk-alert--error"   hidden></div>
               <div id="booking-success" class="bk-alert bk-alert--success" hidden></div>
 
+              <!-- Payment method toggle (revealed by JS when Square is enabled) -->
+              <div class="bk-pay-method" id="bk-pay-method" hidden>
+                <p class="bk-pay-method__label">How would you like to pay?</p>
+                <div class="bk-pay-options">
+                  <label class="bk-pay-option bk-pay-option--active" id="opt-deposit">
+                    <input type="radio" name="pay-method" value="deposit" checked />
+                    <svg class="bk-pay-option__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path stroke-linecap="round" d="M2 10h20"/><path stroke-linecap="round" stroke-width="2" d="M6 15h4"/></svg>
+                    <div class="bk-pay-option__text">
+                      <span class="bk-pay-option__title">$30 Deposit</span>
+                      <span class="bk-pay-option__sub">Secures your spot</span>
+                    </div>
+                  </label>
+                  <label class="bk-pay-option" id="opt-store">
+                    <input type="radio" name="pay-method" value="store" />
+                    <svg class="bk-pay-option__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9l1-5h16l1 5M3 9h18M3 9v11a1 1 0 001 1h16a1 1 0 001-1V9"/><path stroke-linecap="round" d="M9 21v-6h6v6"/></svg>
+                    <div class="bk-pay-option__text">
+                      <span class="bk-pay-option__title">Pay in Store</span>
+                      <span class="bk-pay-option__sub">Pay when you arrive</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
               <!-- Deposit payment section -->
               <div class="bk-deposit" id="bk-deposit">
                 <div class="bk-deposit__divider">
@@ -1041,7 +1064,7 @@
               <button type="button" id="booking-submit" class="bk-submit-btn">
                 Pay $30 Deposit &amp; Request Appointment →
               </button>
-              <p class="bk-note">Deposit is non-refundable within 24 hours of appointment</p>
+              <p class="bk-note" id="bk-note">Deposit is non-refundable within 24 hours of appointment</p>
               <p class="bk-terms-note">By booking you agree to our <a href="/terms" target="_blank">Terms of Service</a> and <a href="/privacy" target="_blank">Privacy Policy</a></p>
             </div>
 

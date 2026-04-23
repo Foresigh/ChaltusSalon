@@ -294,6 +294,35 @@
 
     var state = { date: '', time: '' };
 
+    /* ---- Pay-in-store toggle ---- */
+    var payInStore   = false;
+    var payMethodEl  = document.getElementById('bk-pay-method');
+    var depositEl    = document.getElementById('bk-deposit');
+    var noteEl       = document.getElementById('bk-note');
+
+    function setPayMethod(method) {
+      payInStore = (method === 'store');
+      // Highlight active option card
+      var optDeposit = document.getElementById('opt-deposit');
+      var optStore   = document.getElementById('opt-store');
+      if (optDeposit) optDeposit.classList.toggle('bk-pay-option--active', !payInStore);
+      if (optStore)   optStore.classList.toggle('bk-pay-option--active',  payInStore);
+      // Show / hide card form
+      if (depositEl) depositEl.hidden = payInStore;
+      // Update button and note
+      if (payInStore) {
+        submitBtn.textContent = 'Request Appointment →';
+        if (noteEl) noteEl.textContent = 'Full payment collected in store after your service.';
+      } else {
+        submitBtn.textContent = 'Pay $30 Deposit & Request Appointment →';
+        if (noteEl) noteEl.textContent = 'Deposit is non-refundable within 24 hours of appointment';
+      }
+    }
+
+    document.querySelectorAll('input[name="pay-method"]').forEach(function (radio) {
+      radio.addEventListener('change', function () { setPayMethod(this.value); });
+    });
+
     /* ---- Square payment init ---- */
     var sqReady   = false;
     var sqEnabled = false;
@@ -328,9 +357,10 @@
         });
         sqCard.attach('#card-container');
         sqReady = true;
+        // Show pay-method toggle now that Square is ready
+        if (payMethodEl) payMethodEl.hidden = false;
       } catch (e) {
         console.error('Square init failed:', e.message);
-        var depositEl = document.getElementById('bk-deposit');
         if (depositEl) depositEl.hidden = true;
         submitBtn.textContent = 'Request Appointment →';
       }
@@ -344,18 +374,18 @@
         if (cfg.enabled) {
           initSquare(cfg);
         } else {
-          // Payments not configured — hide deposit UI
-          var depositEl = document.getElementById('bk-deposit');
+          // Payments not configured — hide deposit UI, no toggle needed
           if (depositEl) depositEl.hidden = true;
           if (sqLoadingEl) sqLoadingEl.hidden = true;
           submitBtn.textContent = 'Request Appointment →';
+          if (noteEl) noteEl.textContent = 'Full payment collected in store after your service.';
         }
       })
       .catch(function () {
-        var depositEl = document.getElementById('bk-deposit');
         if (depositEl) depositEl.hidden = true;
         if (sqLoadingEl) sqLoadingEl.hidden = true;
         submitBtn.textContent = 'Request Appointment →';
+        if (noteEl) noteEl.textContent = 'Full payment collected in store after your service.';
       });
 
     var SLOT_GROUPS = [
@@ -573,7 +603,7 @@
         message:        (document.getElementById('b-message').value || '').trim(),
       };
 
-      if (sqReady && sqCard) {
+      if (sqReady && sqCard && !payInStore) {
         /* ── Payment flow ── */
         var cardName = (document.getElementById('sq-name').value || '').trim();
         if (!cardName) { showErr('Please enter the name on your card.'); return; }

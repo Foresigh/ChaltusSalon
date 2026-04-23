@@ -1564,6 +1564,73 @@ p  { font-size: 1rem; }
 .stylist-dd__item-name  { font-size: 0.875rem; font-weight: 500; color: var(--black); }
 .stylist-dd__item-role  { font-size: 0.72rem; color: var(--gray-400); }
 
+/* ---- Pay method toggle ---- */
+.bk-pay-method {
+  margin-bottom: var(--s6);
+}
+.bk-pay-method__label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: var(--s3);
+}
+.bk-pay-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s3);
+}
+.bk-pay-option {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s4) var(--s5);
+  border: 1.5px solid var(--gray-200);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.18s, background 0.18s;
+  background: var(--white);
+}
+.bk-pay-option input[type="radio"] { display: none; }
+.bk-pay-option:hover {
+  border-color: var(--gray-400);
+}
+.bk-pay-option--active {
+  border-color: var(--black);
+  background: var(--gray-50);
+}
+.bk-pay-option__icon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  color: var(--gray-500);
+}
+.bk-pay-option--active .bk-pay-option__icon {
+  color: var(--black);
+}
+.bk-pay-option__text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.bk-pay-option__title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  line-height: 1.2;
+}
+.bk-pay-option--active .bk-pay-option__title {
+  color: var(--black);
+}
+.bk-pay-option__sub {
+  font-size: 0.7rem;
+  color: var(--gray-400);
+}
+@media (max-width: 400px) {
+  .bk-pay-options { grid-template-columns: 1fr; }
+}
+
 /* ---- Deposit payment block ---- */
 .bk-deposit {
   display: flex;
