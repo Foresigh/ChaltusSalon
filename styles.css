@@ -558,9 +558,14 @@ p  { font-size: 1rem; }
 @media (min-width: 640px)  { .gallery-grid { grid-template-columns: repeat(3, 1fr); gap: var(--s3); } }
 @media (min-width: 1024px) { .gallery-grid { grid-template-columns: repeat(4, 1fr); gap: var(--s4); } }
 
-/* Instagram follow strip */
+/* Social follow strip */
 .ig-strip {
+  display: flex;
+  gap: 1rem;
   margin-bottom: var(--s8);
+  max-width: 980px;
+  margin-left: auto;
+  margin-right: auto;
 }
 .ig-strip__link {
   display: flex;
@@ -573,18 +578,24 @@ p  { font-size: 1rem; }
   text-decoration: none;
   color: var(--gray-900);
   transition: border-color var(--t-base), box-shadow var(--t-base);
-  max-width: 480px;
-  margin: 0 auto;
+  flex: 1;
 }
 .ig-strip__link:hover {
   border-color: #c13584;
   box-shadow: 0 4px 20px rgba(193,53,132,0.1);
+}
+.ig-strip__link--tiktok:hover {
+  border-color: #010101;
+  box-shadow: 0 4px 20px rgba(1,1,1,0.1);
 }
 .ig-strip__icon {
   width: 28px;
   height: 28px;
   flex-shrink: 0;
   color: #c13584;
+}
+.ig-strip__link--tiktok .ig-strip__icon {
+  color: #010101;
 }
 .ig-strip__text {
   display: flex;
@@ -607,6 +618,12 @@ p  { font-size: 1rem; }
   color: #c13584;
   white-space: nowrap;
   flex-shrink: 0;
+}
+.ig-strip__cta--tiktok {
+  color: #010101;
+}
+@media (max-width: 600px) {
+  .ig-strip { flex-direction: column; }
 }
 
 .gallery-item {
