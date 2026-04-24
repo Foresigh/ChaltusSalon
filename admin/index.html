@@ -331,12 +331,12 @@
       <!-- ── GALLERY ── -->
       <section data-panel="gallery" class="panel">
         <div class="upload-zone" id="upload-zone">
-          <input type="file" id="gallery-file-input" accept="image/*" multiple hidden />
+          <input type="file" id="gallery-file-input" accept="image/*" multiple style="display:none" />
           <div class="upload-zone__inner">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 21h18M21 3H3M9.75 3.75h4.5M12 3.75v.75"/></svg>
             <p>Drag &amp; drop photos here</p>
             <span>or</span>
-            <button type="button" class="btn btn-outline" id="gallery-pick-btn">Choose Files</button>
+            <label for="gallery-file-input" class="btn btn-outline" id="gallery-pick-btn">Choose Files</label>
           </div>
           <div class="upload-fields">
             <input type="text" id="gallery-alt"   placeholder="Alt text (accessibility)" class="input-sm" />
