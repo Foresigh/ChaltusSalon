@@ -30,6 +30,7 @@ const FROM_ADDRESS    = process.env.FROM_EMAIL || 'onboarding@resend.dev';
 
 if (resend) {
   console.log('✔  Email configured via Resend — notifications → ', SALON_EMAIL.join(', '));
+  console.log('   FROM_ADDRESS:', FROM_ADDRESS);
 } else {
   console.warn('⚠  RESEND_API_KEY not set — email notifications are disabled');
 }
