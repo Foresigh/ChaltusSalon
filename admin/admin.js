@@ -881,7 +881,6 @@ zone.addEventListener('drop', e => {
   handleFiles([...e.dataTransfer.files].filter(f => f.type.startsWith('image/')));
 });
 
-$('#gallery-pick-btn').addEventListener('click', () => $('#gallery-file-input').click());
 $('#gallery-file-input').addEventListener('change', e => handleFiles([...e.target.files]));
 
 function handleFiles(files) {
