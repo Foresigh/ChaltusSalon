@@ -1065,6 +1065,26 @@ app.get('/api/subscribers', auth, async (_req, res) => {
   }
 });
 
+// ── Maintenance mode ───────────────────────────────────────────────────────────
+app.get('/api/settings/maintenance', async (_req, res) => {
+  try {
+    const { rows } = await pool.query(`SELECT value FROM settings WHERE key = 'maintenance_mode'`);
+    res.json({ maintenance: rows[0]?.value === 'true' });
+  } catch { res.json({ maintenance: false }); }
+});
+
+app.patch('/api/settings/maintenance', auth, async (req, res) => {
+  try {
+    const value = req.body.maintenance ? 'true' : 'false';
+    await pool.query(
+      `INSERT INTO settings (key, value) VALUES ('maintenance_mode', $1)
+       ON CONFLICT (key) DO UPDATE SET value = $1`,
+      [value]
+    );
+    res.json({ maintenance: value === 'true' });
+  } catch (err) { res.status(500).json({ error: 'Server error' }); }
+});
+
 // ── SPA fallback ───────────────────────────────────────────────────────────────
 app.get('*', (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 

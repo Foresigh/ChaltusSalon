@@ -139,6 +139,41 @@ document.addEventListener('click', e => {
   }
 });
 
+// ── Maintenance mode toggle ─────────────────────────────────────────────────────
+async function loadMaintenanceState() {
+  const res = await apiFetch('/api/settings/maintenance');
+  if (!res) return;
+  setMaintenanceUI(res.maintenance);
+}
+
+function setMaintenanceUI(on) {
+  const card  = $('#maintenance-card');
+  const icon  = $('#maintenance-icon');
+  const title = $('#maintenance-title');
+  const btn   = $('#maintenance-toggle-btn');
+  if (!card) return;
+  card.classList.toggle('maintenance-card--on', on);
+  icon.textContent  = on ? '🔴' : '🟢';
+  title.textContent = on ? 'Site is Under Construction' : 'Site is Live';
+  $('#maintenance-card .maintenance-card__sub').textContent = on
+    ? 'Visitors see the maintenance page.'
+    : 'Visitors can access the website normally.';
+  btn.textContent = on ? 'Disable Maintenance Mode' : 'Enable Maintenance Mode';
+  btn.classList.toggle('maintenance-card__btn--on', on);
+}
+
+$('#maintenance-toggle-btn').addEventListener('click', async () => {
+  const btn = $('#maintenance-toggle-btn');
+  const isOn = btn.classList.contains('maintenance-card__btn--on');
+  btn.disabled = true;
+  const res = await apiFetch('/api/settings/maintenance', {
+    method: 'PATCH',
+    body: JSON.stringify({ maintenance: !isOn }),
+  });
+  btn.disabled = false;
+  if (res) setMaintenanceUI(res.maintenance);
+});
+
 async function loadDashboard() {
   const d = await apiFetch('/api/stats');
   if (!d) return;
@@ -1272,6 +1307,7 @@ function bootApp() {
   $('#login-screen').hidden = true;
   $('#app').hidden = false;
   populateStylistFilter();
+  loadMaintenanceState();
   switchTab('dashboard');
 }
 

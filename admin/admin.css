@@ -1192,6 +1192,44 @@ textarea { resize: vertical; }
 
 .setup-note svg { flex-shrink: 0; margin-top: 1px; color: #b45309; }
 
+/* ── Maintenance toggle ─────────────────────────────────────────────────────── */
+.maintenance-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: #f0fdf4;
+  border: 1.5px solid #86efac;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+.maintenance-card--on {
+  background: #fff7ed;
+  border-color: #fdba74;
+}
+.maintenance-card__info { display: flex; align-items: center; gap: 0.75rem; }
+.maintenance-card__icon { font-size: 1.3rem; }
+.maintenance-card__title { font-weight: 600; font-size: 0.9rem; color: var(--gray-900); }
+.maintenance-card__sub   { font-size: 0.75rem; color: var(--gray-400); margin-top: 0.1rem; }
+.maintenance-card__btn {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: none;
+  background: #16a34a;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+.maintenance-card__btn:hover   { background: #15803d; }
+.maintenance-card__btn--on     { background: #ea580c; }
+.maintenance-card__btn--on:hover { background: #c2410c; }
+.maintenance-card__btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
 /* ── Analytics ──────────────────────────────────────────────────────────────── */
 .an-stat-row {
   display: grid;

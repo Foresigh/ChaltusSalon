@@ -144,6 +144,18 @@
       <!-- ── DASHBOARD ── -->
       <section data-panel="dashboard" class="panel active">
 
+        <!-- Maintenance toggle -->
+        <div class="maintenance-card" id="maintenance-card">
+          <div class="maintenance-card__info">
+            <span class="maintenance-card__icon" id="maintenance-icon">🟢</span>
+            <div>
+              <div class="maintenance-card__title" id="maintenance-title">Site is Live</div>
+              <div class="maintenance-card__sub">Visitors can access the website normally.</div>
+            </div>
+          </div>
+          <button class="maintenance-card__btn" id="maintenance-toggle-btn">Enable Maintenance Mode</button>
+        </div>
+
         <!-- Quick actions bar -->
         <div class="dash-actions">
           <div style="display:flex;gap:0.6rem;flex-wrap:wrap">
