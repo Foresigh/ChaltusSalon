@@ -373,6 +373,11 @@ app.post('/api/auth/login', async (req, res) => {
     if (!user || !bcrypt.compareSync(password, user.password))
       return res.status(401).json({ error: 'Invalid username or password' });
     const token = jwt.sign({ id: user.id, username: user.username, role: user.role || 'staff' }, JWT_SECRET, { expiresIn: '24h' });
+    const loginIp = ((req.headers['x-forwarded-for'] || '') + '').split(',')[0].trim() || req.ip || '';
+    const loginUa = req.headers['user-agent'] || '';
+    const loginDevice = /mobile|android|iphone/i.test(loginUa) ? 'Mobile' : /ipad|tablet/i.test(loginUa) ? 'Tablet' : 'Desktop';
+    pool.query('INSERT INTO login_logs (username, ip, device) VALUES ($1,$2,$3)',
+      [user.username, loginIp, loginDevice]).catch(() => {});
     res.json({ token, username: user.username, role: user.role || 'staff' });
   } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
@@ -481,7 +486,7 @@ app.post('/api/analytics/click', async (req, res) => {
 
 app.get('/api/analytics', auth, async (req, res) => {
   try {
-    const [todayV, weekV, todayU, daily, topPages, topRef, recent, topClicks] = await Promise.all([
+    const [todayV, weekV, todayU, daily, topPages, topRef, recent, topClicks, logins] = await Promise.all([
       pool.query(`SELECT COUNT(*) AS c FROM page_views WHERE created_at::date = CURRENT_DATE`),
       pool.query(`SELECT COUNT(*) AS c FROM page_views WHERE created_at >= NOW() - INTERVAL '7 days'`),
       pool.query(`SELECT COUNT(DISTINCT ip) AS c FROM page_views WHERE created_at::date = CURRENT_DATE`),
@@ -490,6 +495,7 @@ app.get('/api/analytics', auth, async (req, res) => {
       pool.query(`SELECT referrer, COUNT(*) AS views FROM page_views WHERE referrer != '' GROUP BY referrer ORDER BY views DESC LIMIT 6`),
       pool.query(`SELECT page, referrer, device, city, region, country, created_at FROM page_views ORDER BY created_at DESC LIMIT 20`),
       pool.query(`SELECT label, COUNT(*) AS clicks FROM clicks GROUP BY label ORDER BY clicks DESC LIMIT 10`),
+      pool.query(`SELECT username, ip, device, created_at FROM login_logs ORDER BY created_at DESC LIMIT 20`),
     ]);
     res.json({
       todayViews:     parseInt(todayV.rows[0].c),
@@ -500,6 +506,7 @@ app.get('/api/analytics', auth, async (req, res) => {
       topReferrers:   topRef.rows,
       recentVisitors: recent.rows,
       topClicks:      topClicks.rows,
+      recentLogins:   logins.rows,
     });
   } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });

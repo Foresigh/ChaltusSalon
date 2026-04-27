@@ -1330,6 +1330,22 @@ async function loadAnalytics() {
     </tr>`;
   }).join('') : '<tr><td colspan="5" class="empty-state">No visitors yet.</td></tr>';
 
+  // Recent Logins
+  const loginTbody = $('#an-recent-logins tbody');
+  if (loginTbody) {
+    loginTbody.innerHTML = data.recentLogins?.length ? data.recentLogins.map(l => {
+      const d = new Date(l.created_at);
+      const time = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' +
+                   d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      return `<tr>
+        <td style="white-space:nowrap">${time}</td>
+        <td><strong>${escHTML(l.username)}</strong></td>
+        <td style="color:var(--gray-400)">${escHTML(l.ip) || '—'}</td>
+        <td>${escHTML(l.device)}</td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="4" class="empty-state">No logins recorded yet.</td></tr>';
+  }
+
   // Top Clicks
   const maxC = Math.max(...data.topClicks.map(r => +r.clicks), 1);
   $('#an-top-clicks').innerHTML = data.topClicks.length ? data.topClicks.map(r => `
