@@ -153,12 +153,12 @@ function setMaintenanceUI(on) {
   const btn   = $('#maintenance-toggle-btn');
   if (!card) return;
   card.classList.toggle('maintenance-card--on', on);
-  icon.textContent  = on ? '🔴' : '🟢';
-  title.textContent = on ? 'Site is Under Construction' : 'Site is Live';
-  $('#maintenance-card .maintenance-card__sub').textContent = on
-    ? 'Visitors see the maintenance page.'
-    : 'Visitors can access the website normally.';
-  btn.textContent = on ? 'Disable Maintenance Mode' : 'Enable Maintenance Mode';
+  icon.textContent  = on ? '🟡' : '🟢';
+  title.textContent = on ? 'Banner Showing' : 'No Banner';
+  $('#maintenance-sub').textContent = on
+    ? '"We\'re putting the final touches on our new website — stay tuned!"'
+    : 'Site looks normal to visitors.';
+  btn.textContent = on ? 'Hide Banner' : 'Show Banner';
   btn.classList.toggle('maintenance-card__btn--on', on);
 }
 
