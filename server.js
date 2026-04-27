@@ -403,7 +403,7 @@ function superadmin(req, res, next) {
 // ── User management (superadmin only) ─────────────────────────────────────────
 app.get('/api/users', auth, superadmin, async (_req, res) => {
   try {
-    const { rows } = await pool.query('SELECT id, username, role, created_at FROM users ORDER BY id');
+    const { rows } = await pool.query('SELECT id, username, role FROM users ORDER BY id');
     res.json(rows);
   } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
