@@ -372,8 +372,8 @@ app.post('/api/auth/login', async (req, res) => {
     const user = (await pool.query('SELECT * FROM users WHERE username = $1', [username])).rows[0];
     if (!user || !bcrypt.compareSync(password, user.password))
       return res.status(401).json({ error: 'Invalid username or password' });
-    const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '24h' });
-    res.json({ token, username: user.username });
+    const token = jwt.sign({ id: user.id, username: user.username, role: user.role || 'staff' }, JWT_SECRET, { expiresIn: '24h' });
+    res.json({ token, username: user.username, role: user.role || 'staff' });
   } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 
@@ -386,6 +386,57 @@ app.post('/api/auth/change-password', auth, async (req, res) => {
     if (!bcrypt.compareSync(currentPassword, user.password))
       return res.status(400).json({ error: 'Current password is incorrect' });
     await pool.query('UPDATE users SET password = $1 WHERE id = $2', [bcrypt.hashSync(newPassword, 10), req.user.id]);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: 'Server error' }); }
+});
+
+function superadmin(req, res, next) {
+  if (req.user?.role !== 'superadmin') return res.status(403).json({ error: 'Super admin only' });
+  next();
+}
+
+// ── User management (superadmin only) ─────────────────────────────────────────
+app.get('/api/users', auth, superadmin, async (_req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT id, username, role, created_at FROM users ORDER BY id');
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: 'Server error' }); }
+});
+
+app.post('/api/users', auth, superadmin, async (req, res) => {
+  try {
+    const { username, password, role = 'staff' } = req.body;
+    if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
+    if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    const exists = (await pool.query('SELECT id FROM users WHERE username = $1', [username])).rows[0];
+    if (exists) return res.status(400).json({ error: 'Username already taken' });
+    const hash = bcrypt.hashSync(password, 10);
+    const { rows } = await pool.query(
+      'INSERT INTO users (username, password, role) VALUES ($1,$2,$3) RETURNING id, username, role',
+      [username, hash, role === 'superadmin' ? 'superadmin' : 'staff']
+    );
+    res.json(rows[0]);
+  } catch (err) { res.status(500).json({ error: 'Server error' }); }
+});
+
+app.patch('/api/users/:id/password', auth, superadmin, async (req, res) => {
+  try {
+    const { password } = req.body;
+    if (!password || password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    const user = (await pool.query('SELECT id, role FROM users WHERE id = $1', [req.params.id])).rows[0];
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    await pool.query('UPDATE users SET password = $1 WHERE id = $2', [bcrypt.hashSync(password, 10), req.params.id]);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: 'Server error' }); }
+});
+
+app.delete('/api/users/:id', auth, superadmin, async (req, res) => {
+  try {
+    const user = (await pool.query('SELECT id, role FROM users WHERE id = $1', [req.params.id])).rows[0];
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (user.role === 'superadmin') return res.status(400).json({ error: 'Cannot delete the super admin' });
+    if (parseInt(req.params.id) === req.user.id) return res.status(400).json({ error: 'Cannot delete yourself' });
+    await pool.query('DELETE FROM users WHERE id = $1', [req.params.id]);
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });

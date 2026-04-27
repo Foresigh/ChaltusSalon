@@ -11,6 +11,7 @@ const $ = (sel, ctx = document) => ctx.querySelector(sel);
 const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
 
 let token = localStorage.getItem('chaltus_admin_token') || '';
+let currentRole = localStorage.getItem('chaltus_admin_role') || 'staff';
 
 async function apiFetch(path, opts = {}) {
   const res = await fetch(API + path, {
@@ -63,8 +64,9 @@ function confirm(msg) {
 
 // ── Auth ───────────────────────────────────────────────────────────────────────
 function logout() {
-  token = '';
+  token = ''; currentRole = 'staff';
   localStorage.removeItem('chaltus_admin_token');
+  localStorage.removeItem('chaltus_admin_role');
   $('#app').hidden = true;
   $('#login-screen').hidden = false;
   $('#login-screen').style.display = '';
@@ -78,8 +80,9 @@ $('#login-form').addEventListener('submit', async e => {
   const res  = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
   const data = await res.json();
   if (!res.ok) { err.textContent = data.error; err.hidden = false; return; }
-  token = data.token;
+  token = data.token; currentRole = data.role || 'staff';
   localStorage.setItem('chaltus_admin_token', token);
+  localStorage.setItem('chaltus_admin_role', currentRole);
   $('#topbar-user').textContent = data.username;
   bootApp();
 });
@@ -87,7 +90,7 @@ $('#login-form').addEventListener('submit', async e => {
 $('#logout-btn').addEventListener('click', logout);
 
 // ── Tab navigation ─────────────────────────────────────────────────────────────
-const TAB_TITLES = { dashboard: 'Dashboard', bookings: 'Bookings', gallery: 'Gallery', stylists: 'Stylists', services: 'Services', subscribers: 'Subscribers', analytics: 'Analytics', settings: 'Settings' };
+const TAB_TITLES = { dashboard: 'Dashboard', bookings: 'Bookings', gallery: 'Gallery', stylists: 'Stylists', services: 'Services', subscribers: 'Subscribers', users: 'Users', analytics: 'Analytics', settings: 'Settings' };
 
 function switchTab(tab) {
   $$('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.tab === tab));
@@ -103,6 +106,7 @@ function switchTab(tab) {
   if (tab === 'stylists')    loadStylists();
   if (tab === 'services')    loadServices();
   if (tab === 'subscribers') loadSubscribers();
+  if (tab === 'users')       loadUsers();
   if (tab === 'analytics')   loadAnalytics();
   // close mobile sidebar
   $('#sidebar').classList.remove('open');
@@ -1211,6 +1215,73 @@ async function loadSubscribers() {
   }
 }
 
+// ── Users ──────────────────────────────────────────────────────────────────────
+async function loadUsers() {
+  const tbody = $('#users-table tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--gray-400)">Loading…</td></tr>';
+  const users = await apiFetch('/api/users');
+  if (!users) return;
+  tbody.innerHTML = users.map(u => `
+    <tr>
+      <td><strong>${escHTML(u.username)}</strong></td>
+      <td><span class="status status--${u.role === 'superadmin' ? 'confirmed' : 'pending'}">${u.role}</span></td>
+      <td>
+        ${u.role !== 'superadmin' ? `<button class="btn btn-sm btn--reset-pw" data-id="${u.id}" data-name="${escHTML(u.username)}">Reset Password</button>` : '—'}
+      </td>
+      <td>
+        ${u.role !== 'superadmin' ? `<button class="btn btn-sm btn-danger btn--del-user" data-id="${u.id}" data-name="${escHTML(u.username)}">Delete</button>` : ''}
+      </td>
+    </tr>`).join('');
+
+  tbody.querySelectorAll('.btn--reset-pw').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const pw = window.prompt(`New password for "${btn.dataset.name}" (min 8 chars):`);
+      if (!pw) return;
+      if (pw.length < 8) { alert('Password must be at least 8 characters.'); return; }
+      const res = await apiFetch(`/api/users/${btn.dataset.id}/password`, {
+        method: 'PATCH', body: JSON.stringify({ password: pw }),
+      });
+      if (res?.ok) alert(`✓ Password updated for ${btn.dataset.name}.`);
+      else alert(res?.error || 'Failed to update password.');
+    });
+  });
+
+  tbody.querySelectorAll('.btn--del-user').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!await confirm(`Delete user "${btn.dataset.name}"? This cannot be undone.`)) return;
+      const res = await apiFetch(`/api/users/${btn.dataset.id}`, { method: 'DELETE' });
+      if (res?.ok) loadUsers();
+      else alert(res?.error || 'Failed to delete user.');
+    });
+  });
+}
+
+$('#add-user-form')?.addEventListener('submit', async e => {
+  e.preventDefault();
+  const msg  = $('#add-user-msg');
+  msg.hidden = true;
+  const res = await apiFetch('/api/users', {
+    method: 'POST',
+    body: JSON.stringify({
+      username: $('#new-user-username').value.trim(),
+      password: $('#new-user-password').value,
+      role:     $('#new-user-role').value,
+    }),
+  });
+  if (res?.id) {
+    msg.className = 'alert alert--success';
+    msg.textContent = `✓ User "${res.username}" created successfully.`;
+    msg.hidden = false;
+    $('#add-user-form').reset();
+    loadUsers();
+  } else {
+    msg.className = 'alert alert--error';
+    msg.textContent = res?.error || 'Failed to create user.';
+    msg.hidden = false;
+  }
+});
+
 // ── Analytics ──────────────────────────────────────────────────────────────────
 async function loadAnalytics() {
   const data = await apiFetch('/api/analytics');
@@ -1308,6 +1379,8 @@ function bootApp() {
   $('#app').hidden = false;
   populateStylistFilter();
   loadMaintenanceState();
+  // Show Users tab only for superadmin
+  $$('.nav-item--superadmin').forEach(el => el.hidden = currentRole !== 'superadmin');
   switchTab('dashboard');
 }
 

@@ -106,6 +106,10 @@
         Subscribers
         <span class="badge" id="subscribers-badge" hidden></span>
       </a>
+      <a href="#" class="nav-item nav-item--superadmin" data-tab="users" hidden>
+        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>
+        Users
+      </a>
       <a href="#" class="nav-item" data-tab="analytics">
         <svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zm6-4a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zm6-3a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
         Analytics
@@ -465,6 +469,38 @@
               <tbody id="sub-tbody">
                 <tr><td colspan="4" style="text-align:center;color:var(--gray-400);padding:2rem;">Loading…</td></tr>
               </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── USERS ── -->
+      <section data-panel="users" class="panel">
+        <div class="card card--form card--sm" style="max-width:480px">
+          <div class="card__head"><h2>Add New User</h2></div>
+          <div class="card__body">
+            <form id="add-user-form">
+              <div class="field"><label>Username</label><input type="text" id="new-user-username" placeholder="e.g. chaltu" required autocomplete="off" /></div>
+              <div class="field"><label>Password</label><input type="password" id="new-user-password" placeholder="Min 8 characters" required minlength="8" /></div>
+              <div class="field">
+                <label>Role</label>
+                <select id="new-user-role">
+                  <option value="staff">Staff</option>
+                  <option value="superadmin">Super Admin</option>
+                </select>
+              </div>
+              <div id="add-user-msg" class="alert" hidden></div>
+              <button type="submit" class="btn btn-primary">Create User</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__head"><h2>All Users</h2></div>
+          <div class="card__body" style="padding:0">
+            <table class="an-table" id="users-table">
+              <thead><tr><th>Username</th><th>Role</th><th>Reset Password</th><th></th></tr></thead>
+              <tbody></tbody>
             </table>
           </div>
         </div>
