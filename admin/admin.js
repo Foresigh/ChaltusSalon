@@ -87,7 +87,7 @@ $('#login-form').addEventListener('submit', async e => {
 $('#logout-btn').addEventListener('click', logout);
 
 // ── Tab navigation ─────────────────────────────────────────────────────────────
-const TAB_TITLES = { dashboard: 'Dashboard', bookings: 'Bookings', gallery: 'Gallery', stylists: 'Stylists', services: 'Services', subscribers: 'Subscribers', settings: 'Settings' };
+const TAB_TITLES = { dashboard: 'Dashboard', bookings: 'Bookings', gallery: 'Gallery', stylists: 'Stylists', services: 'Services', subscribers: 'Subscribers', analytics: 'Analytics', settings: 'Settings' };
 
 function switchTab(tab) {
   $$('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.tab === tab));
@@ -103,6 +103,7 @@ function switchTab(tab) {
   if (tab === 'stylists')    loadStylists();
   if (tab === 'services')    loadServices();
   if (tab === 'subscribers') loadSubscribers();
+  if (tab === 'analytics')   loadAnalytics();
   // close mobile sidebar
   $('#sidebar').classList.remove('open');
 }
@@ -1173,6 +1174,97 @@ async function loadSubscribers() {
       a.click();
     };
   }
+}
+
+// ── Analytics ──────────────────────────────────────────────────────────────────
+async function loadAnalytics() {
+  const data = await apiFetch('/api/analytics');
+  if (!data) return;
+
+  $('#an-today-views').textContent    = data.todayViews;
+  $('#an-week-views').textContent     = data.weekViews;
+  $('#an-today-visitors').textContent = data.todayVisitors;
+
+  // Bar chart (SVG)
+  renderAnalyticsChart(data.dailyViews);
+
+  // Top Pages
+  const maxP = Math.max(...data.topPages.map(r => +r.views), 1);
+  $('#an-top-pages').innerHTML = data.topPages.length ? data.topPages.map(r => `
+    <div class="an-bar-row">
+      <span class="an-bar-label" title="${escHTML(r.page)}">${escHTML(r.page)}</span>
+      <div class="an-bar-track"><div class="an-bar-fill" style="width:${Math.round((+r.views/maxP)*100)}%"></div></div>
+      <span class="an-bar-count">${r.views}</span>
+    </div>`).join('') : '<div class="empty-state">No data yet.</div>';
+
+  // Top Referrers
+  const maxR = Math.max(...data.topReferrers.map(r => +r.views), 1);
+  $('#an-top-referrers').innerHTML = data.topReferrers.length ? data.topReferrers.map(r => {
+    const label = (r.referrer || '').replace(/^https?:\/\//, '').split('/')[0];
+    return `<div class="an-bar-row">
+      <span class="an-bar-label" title="${escHTML(r.referrer)}">${escHTML(label)}</span>
+      <div class="an-bar-track"><div class="an-bar-fill" style="width:${Math.round((+r.views/maxR)*100)}%"></div></div>
+      <span class="an-bar-count">${r.views}</span>
+    </div>`;
+  }).join('') : '<div class="empty-state">No data yet.</div>';
+
+  // Recent Visitors
+  const tbody = $('#an-recent-visitors tbody');
+  tbody.innerHTML = data.recentVisitors.length ? data.recentVisitors.map(v => {
+    const d   = new Date(v.created_at);
+    const time = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const loc  = [v.city, v.country].filter(Boolean).join(', ') || '—';
+    const ref  = v.referrer ? v.referrer.replace(/^https?:\/\//, '').split('/')[0] : 'Direct';
+    return `<tr>
+      <td style="white-space:nowrap">${time}</td>
+      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHTML(v.page)}">${escHTML(v.page)}</td>
+      <td>${escHTML(loc)}</td>
+      <td style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHTML(v.referrer)}">${escHTML(ref)}</td>
+      <td>${escHTML(v.device)}</td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="5" class="empty-state">No visitors yet.</td></tr>';
+
+  // Top Clicks
+  const maxC = Math.max(...data.topClicks.map(r => +r.clicks), 1);
+  $('#an-top-clicks').innerHTML = data.topClicks.length ? data.topClicks.map(r => `
+    <div class="an-bar-row">
+      <span class="an-bar-label" title="${escHTML(r.label)}">${escHTML(r.label)}</span>
+      <div class="an-bar-track"><div class="an-bar-fill" style="width:${Math.round((+r.clicks/maxC)*100)}%"></div></div>
+      <span class="an-bar-count">${r.clicks}</span>
+    </div>`).join('') : '<div class="empty-state">No data yet.</div>';
+}
+
+function renderAnalyticsChart(rows) {
+  const el = $('#an-chart');
+  if (!el) return;
+
+  // Build last 14 days
+  const map = {};
+  rows.forEach(r => { map[r.day] = +r.views; });
+  const days = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    days.push({ key, label: d.toLocaleDateString('en-US', { weekday: 'short' }), views: map[key] || 0 });
+  }
+
+  const total = days.reduce((s, d) => s + d.views, 0);
+  const totalEl = $('#an-chart-total');
+  if (totalEl) totalEl.textContent = total + ' total views';
+
+  const max = Math.max(...days.map(d => d.views), 1);
+  const W = 760, H = 120, pad = 30, barW = Math.floor((W - pad) / days.length) - 4;
+
+  const bars = days.map((d, i) => {
+    const bh  = Math.max(2, Math.round((d.views / max) * (H - 20)));
+    const x   = pad + i * ((W - pad) / days.length) + 2;
+    const y   = H - bh - 18;
+    return `<rect x="${x}" y="${y}" width="${barW}" height="${bh}" rx="3" fill="#3b82f6" opacity="0.85"/>
+            <text x="${x + barW/2}" y="${H}" text-anchor="middle" font-size="9" fill="#94a3b8">${d.label}</text>
+            ${d.views ? `<text x="${x + barW/2}" y="${y - 3}" text-anchor="middle" font-size="9" fill="#64748b">${d.views}</text>` : ''}`;
+  }).join('');
+
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H + 4}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">${bars}</svg>`;
 }
 
 // ── Boot ───────────────────────────────────────────────────────────────────────

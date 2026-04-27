@@ -1191,3 +1191,90 @@ textarea { resize: vertical; }
 }
 
 .setup-note svg { flex-shrink: 0; margin-top: 1px; color: #b45309; }
+
+/* ── Analytics ──────────────────────────────────────────────────────────────── */
+.an-stat-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+@media (max-width: 640px) { .an-stat-row { grid-template-columns: 1fr; } }
+
+.an-stat-card {
+  background: var(--white);
+  border: 1px solid var(--gray-100);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.an-stat-icon { font-size: 1.4rem; margin-bottom: 0.25rem; }
+.an-stat-val  { font-size: 2rem; font-weight: 700; color: var(--gray-900); line-height: 1; }
+.an-stat-label { font-size: 0.8rem; color: var(--gray-400); }
+
+.an-chart-card { margin-bottom: 1.5rem; }
+.an-chart-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem 0.5rem;
+  font-size: 0.9rem;
+}
+.an-chart-total { font-size: 0.8rem; color: var(--gray-400); }
+.an-chart { padding: 0.5rem 1rem 1rem; overflow-x: auto; }
+
+.an-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+@media (max-width: 900px) { .an-two-col { grid-template-columns: 1fr; } }
+
+.an-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--gray-100);
+  font-size: 0.8rem;
+}
+.an-bar-row:last-child { border-bottom: none; }
+.an-bar-label {
+  width: 140px;
+  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--gray-600);
+}
+.an-bar-track {
+  flex: 1;
+  background: var(--gray-100);
+  border-radius: 3px;
+  height: 8px;
+  overflow: hidden;
+}
+.an-bar-fill { height: 100%; background: #3b82f6; border-radius: 3px; transition: width 0.4s ease; }
+.an-bar-count { font-weight: 600; color: var(--gray-700); min-width: 28px; text-align: right; }
+
+.an-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.an-table th {
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--gray-400);
+  border-bottom: 1px solid var(--gray-100);
+  background: var(--gray-50);
+}
+.an-table td {
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--gray-100);
+  color: var(--gray-700);
+}
+.an-table tr:last-child td { border-bottom: none; }

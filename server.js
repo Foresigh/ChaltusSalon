@@ -16,6 +16,7 @@ const { Resend } = require('resend');
 const twilio      = require('twilio');
 const { SquareClient, SquareEnvironment } = require('square');
 const { pool, initDB } = require('./db');
+let geoip; try { geoip = require('geoip-lite'); } catch(e) { geoip = null; }
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -386,6 +387,69 @@ app.post('/api/auth/change-password', auth, async (req, res) => {
       return res.status(400).json({ error: 'Current password is incorrect' });
     await pool.query('UPDATE users SET password = $1 WHERE id = $2', [bcrypt.hashSync(newPassword, 10), req.user.id]);
     res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: 'Server error' }); }
+});
+
+// ════════════════════════════════════════════════════════════════════════════════
+// ANALYTICS
+// ════════════════════════════════════════════════════════════════════════════════
+function getDeviceType(ua) {
+  if (/mobile|android|iphone/i.test(ua)) return 'Mobile';
+  if (/ipad|tablet/i.test(ua)) return 'Tablet';
+  return 'Desktop';
+}
+function getGeo(ip) {
+  if (!geoip || !ip || ip === '::1' || ip === '127.0.0.1' || ip.startsWith('::ffff:127')) return {};
+  const clean = ip.replace('::ffff:', '');
+  const geo = geoip.lookup(clean);
+  if (!geo) return {};
+  return { city: geo.city || '', region: geo.region || '', country: geo.country || '' };
+}
+
+app.post('/api/analytics/pageview', async (req, res) => {
+  try {
+    const { page, referrer } = req.body;
+    const ip     = ((req.headers['x-forwarded-for'] || '') + '').split(',')[0].trim() || req.ip || '';
+    const device = getDeviceType(req.headers['user-agent'] || '');
+    const geo    = getGeo(ip);
+    await pool.query(
+      `INSERT INTO page_views (page, referrer, device, ip, city, region, country) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+      [page || '/', referrer || '', device, ip, geo.city || '', geo.region || '', geo.country || '']
+    );
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: 'Server error' }); }
+});
+
+app.post('/api/analytics/click', async (req, res) => {
+  try {
+    const { label, page } = req.body;
+    await pool.query(`INSERT INTO clicks (label, page) VALUES ($1,$2)`, [label || 'unknown', page || '/']);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: 'Server error' }); }
+});
+
+app.get('/api/analytics', auth, async (req, res) => {
+  try {
+    const [todayV, weekV, todayU, daily, topPages, topRef, recent, topClicks] = await Promise.all([
+      pool.query(`SELECT COUNT(*) AS c FROM page_views WHERE created_at::date = CURRENT_DATE`),
+      pool.query(`SELECT COUNT(*) AS c FROM page_views WHERE created_at >= NOW() - INTERVAL '7 days'`),
+      pool.query(`SELECT COUNT(DISTINCT ip) AS c FROM page_views WHERE created_at::date = CURRENT_DATE`),
+      pool.query(`SELECT TO_CHAR(created_at::date,'YYYY-MM-DD') AS day, COUNT(*) AS views FROM page_views WHERE created_at >= NOW() - INTERVAL '14 days' GROUP BY day ORDER BY day`),
+      pool.query(`SELECT page, COUNT(*) AS views FROM page_views GROUP BY page ORDER BY views DESC LIMIT 5`),
+      pool.query(`SELECT referrer, COUNT(*) AS views FROM page_views WHERE referrer != '' GROUP BY referrer ORDER BY views DESC LIMIT 6`),
+      pool.query(`SELECT page, referrer, device, city, region, country, created_at FROM page_views ORDER BY created_at DESC LIMIT 20`),
+      pool.query(`SELECT label, COUNT(*) AS clicks FROM clicks GROUP BY label ORDER BY clicks DESC LIMIT 10`),
+    ]);
+    res.json({
+      todayViews:     parseInt(todayV.rows[0].c),
+      weekViews:      parseInt(weekV.rows[0].c),
+      todayVisitors:  parseInt(todayU.rows[0].c),
+      dailyViews:     daily.rows,
+      topPages:       topPages.rows,
+      topReferrers:   topRef.rows,
+      recentVisitors: recent.rows,
+      topClicks:      topClicks.rows,
+    });
   } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 

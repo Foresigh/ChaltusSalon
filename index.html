@@ -1233,5 +1233,23 @@
   </div>
 
   <script src="script.js" defer></script>
+  <script>
+  (function() {
+    fetch('/api/analytics/pageview', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ page: location.pathname + location.search, referrer: document.referrer })
+    }).catch(function(){});
+    document.addEventListener('click', function(e) {
+      var el = e.target.closest('a, button');
+      if (!el) return;
+      var label = (el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 60)
+                  || el.getAttribute('aria-label') || 'unknown';
+      fetch('/api/analytics/click', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label: label, page: location.pathname })
+      }).catch(function(){});
+    });
+  })();
+  </script>
 </body>
 </html>

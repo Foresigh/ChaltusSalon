@@ -30,6 +30,27 @@ async function initDB() {
     )
   `).catch(e => console.warn('migration settings:', e.message));
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS page_views (
+      id         SERIAL PRIMARY KEY,
+      page       TEXT NOT NULL,
+      referrer   TEXT DEFAULT '',
+      device     TEXT DEFAULT 'Desktop',
+      ip         TEXT DEFAULT '',
+      city       TEXT DEFAULT '',
+      region     TEXT DEFAULT '',
+      country    TEXT DEFAULT '',
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `).catch(e => console.warn('migration page_views:', e.message));
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS clicks (
+      id         SERIAL PRIMARY KEY,
+      label      TEXT NOT NULL,
+      page       TEXT DEFAULT '/',
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `).catch(e => console.warn('migration clicks:', e.message));
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS subscribers (
       id         SERIAL PRIMARY KEY,
       email      TEXT NOT NULL UNIQUE,
