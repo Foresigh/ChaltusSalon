@@ -980,9 +980,9 @@ app.get('/api/stats', auth, async (_req, res) => {
         GROUP BY day ORDER BY day ASC
       `),
       pool.query(`
-        SELECT service, COUNT(*) AS c
+        SELECT service_name AS service, COUNT(*) AS c
         FROM bookings
-        GROUP BY service ORDER BY c DESC LIMIT 6
+        GROUP BY service_name ORDER BY c DESC LIMIT 6
       `),
     ]);
     const confirmedN  = parseInt(confirmed.rows[0].c, 10);
