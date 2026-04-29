@@ -1611,6 +1611,34 @@ p  { font-size: 1rem; }
 .stylist-dd__item-name  { font-size: 0.875rem; font-weight: 500; color: var(--black); }
 .stylist-dd__item-role  { font-size: 0.72rem; color: var(--gray-400); }
 
+/* ---- Pay in Store notice ---- */
+.bk-pay-instore-notice {
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  padding: var(--s4) var(--s5);
+  background: #f0fdf4;
+  border: 1.5px solid #bbf7d0;
+  border-radius: 10px;
+  margin-bottom: var(--s6);
+}
+.bk-pay-instore-notice svg {
+  flex-shrink: 0;
+  color: #16a34a;
+}
+.bk-pay-instore-notice__title {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #15803d;
+}
+.bk-pay-instore-notice__sub {
+  display: block;
+  font-size: 0.78rem;
+  color: #166534;
+  margin-top: 2px;
+}
+
 /* ---- Pay method toggle ---- */
 .bk-pay-method {
   margin-bottom: var(--s6);

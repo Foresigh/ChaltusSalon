@@ -294,99 +294,11 @@
 
     var state = { date: '', time: '' };
 
-    /* ---- Pay-in-store toggle ---- */
-    var payInStore   = false;
-    var payMethodEl  = document.getElementById('bk-pay-method');
-    var depositEl    = document.getElementById('bk-deposit');
-    var noteEl       = document.getElementById('bk-note');
-
-    function setPayMethod(method) {
-      payInStore = (method === 'store');
-      // Highlight active option card
-      var optDeposit = document.getElementById('opt-deposit');
-      var optStore   = document.getElementById('opt-store');
-      if (optDeposit) optDeposit.classList.toggle('bk-pay-option--active', !payInStore);
-      if (optStore)   optStore.classList.toggle('bk-pay-option--active',  payInStore);
-      // Show / hide card form
-      if (depositEl) depositEl.hidden = payInStore;
-      // Update button and note
-      if (payInStore) {
-        submitBtn.textContent = 'Request Appointment →';
-        if (noteEl) noteEl.textContent = 'Full payment collected in store after your service.';
-      } else {
-        submitBtn.textContent = 'Pay $30 Deposit & Request Appointment →';
-        if (noteEl) noteEl.textContent = 'Deposit is non-refundable within 24 hours of appointment';
-      }
-    }
-
-    document.querySelectorAll('input[name="pay-method"]').forEach(function (radio) {
-      radio.addEventListener('change', function () { setPayMethod(this.value); });
-    });
-
-    /* ---- Square payment init ---- */
-    var sqReady   = false;
-    var sqEnabled = false;
-
-    function loadSquareScript(src) {
-      return new Promise(function (resolve, reject) {
-        var s = document.createElement('script');
-        s.src = src;
-        s.onload = resolve;
-        s.onerror = reject;
-        document.head.appendChild(s);
-      });
-    }
-
-    var sqCard = null;
-
-    async function initSquare(cfg) {
-      try {
-        var sdkUrl = cfg.env === 'production'
-          ? 'https://web.squarecdn.com/v1/square.js'
-          : 'https://sandbox.web.squarecdn.com/v1/square.js';
-        await loadSquareScript(sdkUrl);
-
-        var payments = window.Square.payments(cfg.appId, cfg.locationId);
-        sqCard = await payments.card({
-          style: {
-            '.input-container': { borderColor: '#d4d4d4', borderRadius: '6px' },
-            '.input-container.is-focus': { borderColor: '#0a0a0a' },
-            '.input-container.is-error':  { borderColor: '#c0392b' },
-            input: { fontSize: '14px', color: '#141414' },
-          },
-        });
-        sqCard.attach('#card-container');
-        sqReady = true;
-        // Show pay-method toggle now that Square is ready
-        if (payMethodEl) payMethodEl.hidden = false;
-      } catch (e) {
-        console.error('Square init failed:', e.message);
-        if (depositEl) depositEl.hidden = true;
-        submitBtn.textContent = 'Request Appointment →';
-      }
-    }
-
-    // Fetch config and init Square if enabled
-    fetch('/api/sq-config')
-      .then(function (r) { return r.json(); })
-      .then(function (cfg) {
-        sqEnabled = cfg.enabled;
-        if (cfg.enabled) {
-          initSquare(cfg);
-        } else {
-          // Payments not configured — hide deposit UI, no toggle needed
-          if (depositEl) depositEl.hidden = true;
-          if (sqLoadingEl) sqLoadingEl.hidden = true;
-          submitBtn.textContent = 'Request Appointment →';
-          if (noteEl) noteEl.textContent = 'Full payment collected in store after your service.';
-        }
-      })
-      .catch(function () {
-        if (depositEl) depositEl.hidden = true;
-        if (sqLoadingEl) sqLoadingEl.hidden = true;
-        submitBtn.textContent = 'Request Appointment →';
-        if (noteEl) noteEl.textContent = 'Full payment collected in store after your service.';
-      });
+    /* ---- Pay in Store (deposit disabled — re-enable Square block to reactivate) ---- */
+    var payInStore = true;
+    var sqReady    = false;
+    var sqCard     = null;
+    submitBtn.textContent = 'Request Appointment →';
 
     var SLOT_GROUPS = [
       { label: 'Morning',   slots: ['10:00 AM','10:30 AM','11:00 AM','11:30 AM'] },
