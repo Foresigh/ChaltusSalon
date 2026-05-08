@@ -760,75 +760,80 @@ $('#sched-refresh').addEventListener('click', () => {
   if (schedMode === 'week') loadScheduleWeek(); else loadSchedule();
 });
 
-async function loadScheduleWeek() {
-  // Find Monday of current week
+function buildWeekDays() {
   const monday = new Date(schedDate);
-  const day = monday.getDay(); // 0=Sun
+  const day = monday.getDay();
   monday.setDate(monday.getDate() - (day === 0 ? 6 : day - 1));
-
-  const days = Array.from({ length: 7 }, (_, i) => {
+  return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
     return d;
   });
+}
 
-  const weekStart = dateToStr(days[0]);
-  const weekEnd   = dateToStr(days[6]);
-  const label = `${days[0].toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${days[6].toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
-  $('#sched-date-label').textContent = label;
-
-  // Fetch entire week in one API call
-  const weekData = await apiFetch(`/api/bookings?date_from=${dateToStr(days[0])}&date_to=${dateToStr(days[6])}&limit=500`);
-  if (!weekData) return;
-  const allRows = weekData.rows || [];
-
+function renderWeekGrid(days, allRows) {
+  const toMins = t => { const m = t?.match(/(\d+):(\d+)\s*(AM|PM)/i); if (!m) return 0; let h = +m[1]; if (m[3].toUpperCase() === 'PM' && h !== 12) h += 12; if (m[3].toUpperCase() === 'AM' && h === 12) h = 0; return h * 60 + +m[2]; };
   const todayISO = todayStr();
   const wrap = $('#sched-wrap');
   wrap.innerHTML = '';
   const grid = document.createElement('div');
   grid.className = 'week-grid';
 
-  days.forEach((d, i) => {
-    const iso       = dateToStr(d);
-    const isToday   = iso === todayISO;
-    const dayName   = d.toLocaleDateString('en-US', { weekday: 'short' });
-    const dayNum    = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const bookings  = allRows.filter(b => String(b.preferred_date).slice(0,10) === iso).sort((a,b) => {
-      const toMins = t => { const m=t?.match(/(\d+):(\d+)\s*(AM|PM)/i); if(!m) return 0; let h=+m[1]; if(m[3].toUpperCase()==='PM'&&h!==12)h+=12; if(m[3].toUpperCase()==='AM'&&h===12)h=0; return h*60+ +m[2]; };
-      return toMins(a.preferred_time) - toMins(b.preferred_time);
-    });
+  days.forEach(d => {
+    const iso      = dateToStr(d);
+    const isToday  = iso === todayISO;
+    const dayName  = d.toLocaleDateString('en-US', { weekday: 'short' });
+    const dayNum   = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const dayRows  = allRows
+      .filter(b => String(b.preferred_date).slice(0, 10) === iso)
+      .sort((a, b) => toMins(a.preferred_time) - toMins(b.preferred_time));
 
     const card = document.createElement('div');
     card.className = `week-day-card${isToday ? ' week-day-card--today' : ''}`;
-
     card.innerHTML = `
       <div class="week-day-head">
         <span class="week-day-name">${dayName}</span>
         <span class="week-day-num${isToday ? ' week-day-num--today' : ''}">${dayNum}</span>
-        ${bookings.length ? `<span class="week-day-count">${bookings.length}</span>` : ''}
+        ${dayRows.length ? `<span class="week-day-count">${dayRows.length}</span>` : ''}
       </div>
       <div class="week-day-body">
-        ${bookings.length ? bookings.map(b => `
+        ${dayRows.length ? dayRows.map(b => `
           <div class="week-booking week-booking--${b.status}" data-id="${b.id}">
             <span class="week-bk-time">${escHTML(b.preferred_time)}</span>
             <span class="week-bk-name">${escHTML(b.client_name)}</span>
             <span class="week-bk-svc">${escHTML(b.service_name)}</span>
             <span class="week-bk-stylist">${escHTML(b.stylist_name)}</span>
           </div>`).join('')
-        : '<span class="week-day-empty">No bookings</span>'}
+          : '<span class="week-day-empty">No bookings</span>'}
       </div>`;
 
     card.querySelectorAll('.week-booking[data-id]').forEach(el => {
       el.addEventListener('click', () => {
-        const b = bookings.find(r => String(r.id) === el.dataset.id);
-        if (b) openBookingModal(b);
+        const bk = dayRows.find(r => String(r.id) === el.dataset.id);
+        if (bk) openBookingModal(bk);
       });
     });
-
     grid.appendChild(card);
   });
 
   wrap.appendChild(grid);
+}
+
+async function loadScheduleWeek() {
+  try {
+    const days  = buildWeekDays();
+    const label = `${days[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${days[6].toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    $('#sched-date-label').textContent = label;
+
+    // Render skeleton immediately so grid is visible before fetch
+    renderWeekGrid(days, []);
+
+    const weekData = await apiFetch(`/api/bookings?date_from=${dateToStr(days[0])}&date_to=${dateToStr(days[6])}&limit=200`);
+    if (weekData && weekData.rows) renderWeekGrid(days, weekData.rows);
+  } catch (e) {
+    console.error('loadScheduleWeek error:', e);
+    $('#sched-wrap').innerHTML = `<p style="padding:1rem;color:red;">Error loading schedule: ${e.message}</p>`;
+  }
 }
 
 // ── Today's bookings card ─────────────────────────────────────────────────────

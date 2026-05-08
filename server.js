@@ -838,7 +838,7 @@ app.get('/api/bookings', auth, async (req, res) => {
     const { rows: countRows } = await pool.query(countSql, params);
     const total = parseInt(countRows[0].total, 10);
 
-    const pageSize = Math.min(parseInt(limitParam, 10) || 25, 100);
+    const pageSize = Math.min(parseInt(limitParam, 10) || 25, 500);
     const pageNum  = Math.max(parseInt(page, 10) || 1, 1);
     params.push(pageSize, (pageNum - 1) * pageSize);
     const sql = `SELECT b.*, s.price AS service_price, s.price_is_from
