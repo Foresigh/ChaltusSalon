@@ -99,7 +99,6 @@ function switchTab(tab) {
   if (tab === 'dashboard')   loadDashboard();
   if (tab === 'bookings') {
     loadBookings(true);
-    loadRecentBookingsCard();
   }
   if (tab === 'gallery')     loadGallery();
   if (tab === 'stylists')    loadStylists();
@@ -190,11 +189,6 @@ async function loadDashboard() {
   renderCharts(d);
 }
 
-async function loadRecentBookingsCard() {
-  const d = await apiFetch('/api/stats');
-  if (!d || !d.recent) return;
-  renderBookingRows($('#bk-recent-table tbody'), d.recent, true);
-}
 
 function renderCharts(d) {
   // ── Trend: bookings over last 30 days ──
