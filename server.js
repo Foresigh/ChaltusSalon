@@ -824,9 +824,9 @@ app.get('/api/bookings', auth, async (req, res) => {
     if (status)  { params.push(status);  where.push(`status = $${params.length}`); }
     if (date)    { params.push(date);    where.push(`preferred_date = $${params.length}`); }
     if (stylist) { params.push(stylist); where.push(`stylist_name = $${params.length}`); }
-    const order = sort === 'asc'
-      ? 'ORDER BY preferred_date ASC, preferred_time ASC, created_at DESC'
-      : 'ORDER BY created_at DESC';
+    const order = sort === 'newest'
+      ? 'ORDER BY created_at DESC'
+      : 'ORDER BY preferred_date ASC, preferred_time ASC, created_at DESC';
     const whereClause = where.length ? ' WHERE ' + where.join(' AND ') : '';
 
     // Count total for pagination
