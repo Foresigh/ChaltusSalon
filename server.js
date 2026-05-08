@@ -847,7 +847,7 @@ app.get('/api/bookings', auth, async (req, res) => {
                  ${whereClause} ${order} LIMIT $${params.length - 1} OFFSET $${params.length}`;
     const { rows } = await pool.query(sql, params);
     res.json({ rows, total, page: pageNum, pageSize });
-  } catch (err) { res.status(500).json({ error: 'Server error' }); }
+  } catch (err) { console.error('GET /api/bookings error:', err.message); res.status(500).json({ error: err.message }); }
 });
 
 // Reschedule a booking (date, start time, duration)

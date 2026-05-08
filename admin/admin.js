@@ -735,8 +735,12 @@ let schedMode = 'week';
 
 function setSchedMode(mode) {
   schedMode = mode;
-  $('#sched-mode-week').classList.toggle('active', mode === 'week');
-  $('#sched-mode-day').classList.toggle('active',  mode === 'day');
+  const wBtn = $('#sched-mode-week');
+  const dBtn = $('#sched-mode-day');
+  if (wBtn) wBtn.classList.toggle('active', mode === 'week');
+  if (dBtn) dBtn.classList.toggle('active',  mode === 'day');
+  const wrap = $('#sched-wrap');
+  if (wrap) wrap.innerHTML = '<p style="padding:1rem;color:#888;">Loading…</p>';
   if (mode === 'week') loadScheduleWeek();
   else                 loadSchedule();
 }
@@ -829,7 +833,11 @@ async function loadScheduleWeek() {
     renderWeekGrid(days, []);
 
     const weekData = await apiFetch(`/api/bookings?date_from=${dateToStr(days[0])}&date_to=${dateToStr(days[6])}&limit=200`);
-    if (weekData && weekData.rows) renderWeekGrid(days, weekData.rows);
+    if (weekData && weekData.rows) {
+      renderWeekGrid(days, weekData.rows);
+    } else if (weekData && weekData.error) {
+      $('#sched-wrap').innerHTML = `<p style="padding:1rem;color:red;">API error: ${weekData.error}</p>`;
+    }
   } catch (e) {
     console.error('loadScheduleWeek error:', e);
     $('#sched-wrap').innerHTML = `<p style="padding:1rem;color:red;">Error loading schedule: ${e.message}</p>`;
