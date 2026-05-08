@@ -98,9 +98,8 @@ function switchTab(tab) {
   $('#page-title').textContent = TAB_TITLES[tab] ?? tab;
   if (tab === 'dashboard')   loadDashboard();
   if (tab === 'bookings') {
-    // Default to today's date on first open
-    if (!$('#booking-filter-date').value) $('#booking-filter-date').value = todayStr();
-    loadBookings();
+    loadBookings(true);
+    loadRecentBookingsCard();
   }
   if (tab === 'gallery')     loadGallery();
   if (tab === 'stylists')    loadStylists();
@@ -189,6 +188,12 @@ async function loadDashboard() {
   updatePendingBadge(d.pending);
   renderBookingRows($('#recent-table tbody'), d.recent, true);
   renderCharts(d);
+}
+
+async function loadRecentBookingsCard() {
+  const d = await apiFetch('/api/stats');
+  if (!d || !d.recent) return;
+  renderBookingRows($('#bk-recent-table tbody'), d.recent, true);
 }
 
 function renderCharts(d) {
