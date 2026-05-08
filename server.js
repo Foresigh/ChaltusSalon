@@ -825,9 +825,9 @@ app.get('/api/bookings', auth, async (req, res) => {
     if (date)    { params.push(date);    where.push(`preferred_date = $${params.length}`); }
     if (stylist) { params.push(stylist); where.push(`stylist_name = $${params.length}`); }
     // sort=created_at_desc → most recent bookings first; default → upcoming scheduled first
-    const order = sort === 'created_at_desc'
-      ? 'ORDER BY created_at DESC'
-      : 'ORDER BY preferred_date ASC, preferred_time ASC, created_at DESC';
+    const order = sort === 'asc'
+      ? 'ORDER BY preferred_date ASC, preferred_time ASC, created_at DESC'
+      : 'ORDER BY created_at DESC';
     const whereClause = where.length ? ' WHERE ' + where.join(' AND ') : '';
     const sql = `SELECT b.*, s.price AS service_price, s.price_is_from
                  FROM bookings b
