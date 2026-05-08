@@ -337,7 +337,11 @@ $('#view-schedule-btn').addEventListener('click', () => {
 // ── List view ─────────────────────────────────────────────────────────────────
 let activeBookingStylist = '';
 
-async function loadBookings() {
+let bookingsPage = 1;
+const BOOKINGS_PAGE_SIZE = 25;
+
+async function loadBookings(resetPage) {
+  if (resetPage) bookingsPage = 1;
   const status  = $('#booking-filter-status').value;
   const date    = $('#booking-filter-date').value;
   const stylist = activeBookingStylist;
@@ -345,11 +349,35 @@ async function loadBookings() {
   if (status)  params.set('status', status);
   if (date)    params.set('date', date);
   if (stylist) params.set('stylist', stylist);
-  // Most recent booking on top
-  params.set('sort', 'created_at_desc');
+  params.set('page', bookingsPage);
+  params.set('limit', BOOKINGS_PAGE_SIZE);
   const data = await apiFetch(`/api/bookings?${params}`);
   if (!data) return;
-  renderBookingRows($('#bookings-table tbody'), data, false);
+  renderBookingRows($('#bookings-table tbody'), data.rows, false);
+  renderBookingsPagination(data.total, data.page, data.pageSize);
+}
+
+function renderBookingsPagination(total, page, pageSize) {
+  let el = $('#bookings-pagination');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'bookings-pagination';
+    el.className = 'pagination-bar';
+    $('#bookings-table').closest('.card').after(el);
+  }
+  const totalPages = Math.ceil(total / pageSize);
+  if (totalPages <= 1) { el.hidden = true; return; }
+  el.hidden = false;
+  const start = (page - 1) * pageSize + 1;
+  const end   = Math.min(page * pageSize, total);
+  el.innerHTML = `
+    <span class="pagination-info">${start}–${end} of ${total}</span>
+    <button class="btn btn-sm btn-outline" id="pg-prev" ${page <= 1 ? 'disabled' : ''}>← Prev</button>
+    <span class="pagination-pages">Page ${page} of ${totalPages}</span>
+    <button class="btn btn-sm btn-outline" id="pg-next" ${page >= totalPages ? 'disabled' : ''}>Next →</button>
+  `;
+  el.querySelector('#pg-prev').addEventListener('click', () => { bookingsPage--; loadBookings(); });
+  el.querySelector('#pg-next').addEventListener('click', () => { bookingsPage++; loadBookings(); });
 }
 
 async function populateStylistFilter() {
@@ -375,7 +403,7 @@ async function populateStylistFilter() {
       $$('.stylist-avatar', bar).forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       activeBookingStylist = s.name;
-      loadBookings();
+      loadBookings(true);
     });
     bar.appendChild(btn);
   });
@@ -385,7 +413,7 @@ async function populateStylistFilter() {
     $$('.stylist-avatar', bar).forEach(b => b.classList.remove('active'));
     $('.stylist-avatar--all', bar).classList.add('active');
     activeBookingStylist = '';
-    loadBookings();
+    loadBookings(true);
   });
 }
 
@@ -591,26 +619,26 @@ $('#manual-booking-form').addEventListener('submit', async e => {
     $('#manual-booking-modal').hidden = true;
     $('#manual-booking-form').reset();
     loadDashboard();
-    loadBookings();
+    loadBookings(true);
   } else {
     err.textContent = (res && res.error) || 'Failed to create booking.';
     err.hidden = false;
   }
 });
 
-$('#booking-filter-status').addEventListener('change', loadBookings);
-$('#booking-filter-stylist').addEventListener('change', loadBookings);
-$('#booking-filter-date').addEventListener('change', loadBookings);
+$('#booking-filter-status').addEventListener('change', () => loadBookings(true));
+$('#booking-filter-stylist').addEventListener('change', () => loadBookings(true));
+$('#booking-filter-date').addEventListener('change', () => loadBookings(true));
 $('#booking-today-btn').addEventListener('click', () => {
   $('#booking-filter-date').value = todayStr();
-  loadBookings();
+  loadBookings(true);
 });
 $('#booking-filter-clear').addEventListener('click', () => {
   $('#booking-filter-status').value = '';
   $('#booking-filter-date').value   = '';
-  loadBookings();
+  loadBookings(true);
 });
-$('#booking-refresh').addEventListener('click', loadBookings);
+$('#booking-refresh').addEventListener('click', () => loadBookings(true));
 
 // ── Schedule view ─────────────────────────────────────────────────────────────
 async function loadSchedule() {

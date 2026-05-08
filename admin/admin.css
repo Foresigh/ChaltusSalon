@@ -1316,3 +1316,16 @@ textarea { resize: vertical; }
   color: var(--gray-700);
 }
 .an-table tr:last-child td { border-bottom: none; }
+
+
+/* ---- Bookings pagination ---- */
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.82rem;
+  color: var(--gray-500);
+}
+.pagination-info { margin-right: auto; }
+.pagination-pages { color: var(--gray-700); font-weight: 500; }

@@ -818,23 +818,31 @@ app.post('/api/bookings', async (req, res) => {
 
 app.get('/api/bookings', auth, async (req, res) => {
   try {
-    const { status, date, stylist, sort } = req.query;
+    const { status, date, stylist, sort, page, limit: limitParam } = req.query;
     const where  = [];
     const params = [];
     if (status)  { params.push(status);  where.push(`status = $${params.length}`); }
     if (date)    { params.push(date);    where.push(`preferred_date = $${params.length}`); }
     if (stylist) { params.push(stylist); where.push(`stylist_name = $${params.length}`); }
-    // sort=created_at_desc → most recent bookings first; default → upcoming scheduled first
     const order = sort === 'asc'
       ? 'ORDER BY preferred_date ASC, preferred_time ASC, created_at DESC'
       : 'ORDER BY created_at DESC';
     const whereClause = where.length ? ' WHERE ' + where.join(' AND ') : '';
+
+    // Count total for pagination
+    const countSql = `SELECT COUNT(*) AS total FROM bookings b ${whereClause}`;
+    const { rows: countRows } = await pool.query(countSql, params);
+    const total = parseInt(countRows[0].total, 10);
+
+    const pageSize = Math.min(parseInt(limitParam, 10) || 25, 100);
+    const pageNum  = Math.max(parseInt(page, 10) || 1, 1);
+    params.push(pageSize, (pageNum - 1) * pageSize);
     const sql = `SELECT b.*, s.price AS service_price, s.price_is_from
                  FROM bookings b
                  LEFT JOIN services s ON LOWER(s.name) = LOWER(b.service_name)
-                 ${whereClause} ${order}`;
+                 ${whereClause} ${order} LIMIT $${params.length - 1} OFFSET $${params.length}`;
     const { rows } = await pool.query(sql, params);
-    res.json(rows);
+    res.json({ rows, total, page: pageNum, pageSize });
   } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 
