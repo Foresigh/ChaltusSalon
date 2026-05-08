@@ -818,12 +818,14 @@ app.post('/api/bookings', async (req, res) => {
 
 app.get('/api/bookings', auth, async (req, res) => {
   try {
-    const { status, date, stylist, sort, page, limit: limitParam } = req.query;
+    const { status, date, date_from, date_to, stylist, sort, page, limit: limitParam } = req.query;
     const where  = [];
     const params = [];
-    if (status)  { params.push(status);  where.push(`status = $${params.length}`); }
-    if (date)    { params.push(date);    where.push(`preferred_date = $${params.length}`); }
-    if (stylist) { params.push(stylist); where.push(`stylist_name = $${params.length}`); }
+    if (status)    { params.push(status);    where.push(`status = $${params.length}`); }
+    if (date)      { params.push(date);      where.push(`preferred_date = $${params.length}`); }
+    if (date_from) { params.push(date_from); where.push(`preferred_date >= $${params.length}`); }
+    if (date_to)   { params.push(date_to);   where.push(`preferred_date <= $${params.length}`); }
+    if (stylist)   { params.push(stylist);   where.push(`stylist_name = $${params.length}`); }
     const order = `ORDER BY
       CASE WHEN preferred_date = CURRENT_DATE THEN 0
            WHEN preferred_date > CURRENT_DATE THEN 1

@@ -649,11 +649,12 @@ async function loadSchedule() {
   const label   = schedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
   $('#sched-date-label').textContent = label;
 
-  const [stylists, bookings] = await Promise.all([
+  const [stylists, bookingsData] = await Promise.all([
     apiFetch('/api/stylists'),
-    apiFetch(`/api/bookings?date=${dateStr}`)
+    apiFetch(`/api/bookings?date=${dateStr}&limit=500`)
   ]);
-  if (!stylists || !bookings) return;
+  if (!stylists || !bookingsData) return;
+  const bookings = bookingsData.rows || [];
 
   const cols = stylists.map(s => s.name);
   if (!cols.length) { $('#sched-wrap').innerHTML = '<p class="empty-state">No stylists found.</p>'; return; }
@@ -718,7 +719,7 @@ async function loadSchedule() {
   });
 
   html += `</tbody></table>`;
-  $('#sched-wrap').innerHTML = html;
+  $('#sched-wrap').innerHTML = `<div class="card"><div class="table-wrap">${html}</div></div>`;
 
   // Click cell to open modal
   $$('.sched-cell[data-id]', $('#sched-wrap')).forEach(cell => {
@@ -776,11 +777,10 @@ async function loadScheduleWeek() {
   const label = `${days[0].toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${days[6].toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
   $('#sched-date-label').textContent = label;
 
-  // Fetch all bookings for the week in one call
-  const allBookings = await Promise.all(
-    days.map(d => apiFetch(`/api/bookings?date=${dateToStr(d)}&limit=100`))
-  );
-  if (allBookings.some(r => r === null)) return;
+  // Fetch entire week in one API call
+  const weekData = await apiFetch(`/api/bookings?date_from=${dateToStr(days[0])}&date_to=${dateToStr(days[6])}&limit=500`);
+  if (!weekData) return;
+  const allRows = weekData.rows || [];
 
   const todayISO = todayStr();
   const wrap = $('#sched-wrap');
@@ -793,7 +793,7 @@ async function loadScheduleWeek() {
     const isToday   = iso === todayISO;
     const dayName   = d.toLocaleDateString('en-US', { weekday: 'short' });
     const dayNum    = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const bookings  = (allBookings[i]?.rows || []).sort((a,b) => {
+    const bookings  = allRows.filter(b => String(b.preferred_date).slice(0,10) === iso).sort((a,b) => {
       const toMins = t => { const m=t?.match(/(\d+):(\d+)\s*(AM|PM)/i); if(!m) return 0; let h=+m[1]; if(m[3].toUpperCase()==='PM'&&h!==12)h+=12; if(m[3].toUpperCase()==='AM'&&h===12)h=0; return h*60+ +m[2]; };
       return toMins(a.preferred_time) - toMins(b.preferred_time);
     });
