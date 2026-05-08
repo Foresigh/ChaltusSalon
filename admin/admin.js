@@ -745,24 +745,14 @@ function setSchedMode(mode) {
   else                 loadSchedule();
 }
 
-$('#sched-mode-week').addEventListener('click', () => setSchedMode('week'));
-$('#sched-mode-day').addEventListener('click',  () => setSchedMode('day'));
+function on(sel, ev, fn) { const el = $(sel); if (el) el.addEventListener(ev, fn); }
 
-$('#sched-prev').addEventListener('click', () => {
-  if (schedMode === 'week') { schedDate.setDate(schedDate.getDate() - 7); loadScheduleWeek(); }
-  else { schedDate.setDate(schedDate.getDate() - 1); loadSchedule(); }
-});
-$('#sched-next').addEventListener('click', () => {
-  if (schedMode === 'week') { schedDate.setDate(schedDate.getDate() + 7); loadScheduleWeek(); }
-  else { schedDate.setDate(schedDate.getDate() + 1); loadSchedule(); }
-});
-$('#sched-today').addEventListener('click', () => {
-  schedDate = new Date(); schedDate.setHours(0,0,0,0);
-  if (schedMode === 'week') loadScheduleWeek(); else loadSchedule();
-});
-$('#sched-refresh').addEventListener('click', () => {
-  if (schedMode === 'week') loadScheduleWeek(); else loadSchedule();
-});
+on('#sched-mode-week', 'click', () => setSchedMode('week'));
+on('#sched-mode-day',  'click', () => setSchedMode('day'));
+on('#sched-prev',    'click', () => { if (schedMode === 'week') { schedDate.setDate(schedDate.getDate() - 7); loadScheduleWeek(); } else { schedDate.setDate(schedDate.getDate() - 1); loadSchedule(); } });
+on('#sched-next',    'click', () => { if (schedMode === 'week') { schedDate.setDate(schedDate.getDate() + 7); loadScheduleWeek(); } else { schedDate.setDate(schedDate.getDate() + 1); loadSchedule(); } });
+on('#sched-today',   'click', () => { schedDate = new Date(); schedDate.setHours(0,0,0,0); if (schedMode === 'week') loadScheduleWeek(); else loadSchedule(); });
+on('#sched-refresh', 'click', () => { if (schedMode === 'week') loadScheduleWeek(); else loadSchedule(); });
 
 function buildWeekDays() {
   const monday = new Date(schedDate);
@@ -778,7 +768,8 @@ function buildWeekDays() {
 function renderWeekGrid(days, allRows) {
   const toMins = t => { const m = t?.match(/(\d+):(\d+)\s*(AM|PM)/i); if (!m) return 0; let h = +m[1]; if (m[3].toUpperCase() === 'PM' && h !== 12) h += 12; if (m[3].toUpperCase() === 'AM' && h === 12) h = 0; return h * 60 + +m[2]; };
   const todayISO = todayStr();
-  const wrap = $('#sched-wrap');
+  const wrap = $('#sched-wrap') || $('#booking-schedule-view');
+  if (!wrap) return;
   wrap.innerHTML = '';
   const grid = document.createElement('div');
   grid.className = 'week-grid';
@@ -840,7 +831,8 @@ async function loadScheduleWeek() {
     }
   } catch (e) {
     console.error('loadScheduleWeek error:', e);
-    $('#sched-wrap').innerHTML = `<p style="padding:1rem;color:red;">Error loading schedule: ${e.message}</p>`;
+    const w = $('#sched-wrap') || $('#booking-schedule-view');
+    if (w) w.innerHTML = `<p style="padding:1rem;color:red;">Error: ${e.message}</p>`;
   }
 }
 
