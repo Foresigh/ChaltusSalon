@@ -353,8 +353,8 @@ async function loadBookings(resetPage) {
   params.set('limit', BOOKINGS_PAGE_SIZE);
   const data = await apiFetch(`/api/bookings?${params}`);
   if (!data) return;
-  renderBookingRows($('#bookings-table tbody'), data.rows, false);
-  renderBookingsPagination(data.total, data.page, data.pageSize);
+  renderBookingRows($('#bookings-table tbody'), data.rows || [], false);
+  renderBookingsPagination(data.total || 0, data.page || 1, data.pageSize || 25);
 }
 
 function renderBookingsPagination(total, page, pageSize) {

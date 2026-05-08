@@ -827,8 +827,8 @@ app.get('/api/bookings', auth, async (req, res) => {
     if (date_to)   { params.push(date_to);   where.push(`preferred_date <= $${params.length}`); }
     if (stylist)   { params.push(stylist);   where.push(`stylist_name = $${params.length}`); }
     const order = `ORDER BY
-      CASE WHEN preferred_date = CURRENT_DATE THEN 0
-           WHEN preferred_date > CURRENT_DATE THEN 1
+      CASE WHEN preferred_date = TO_CHAR(CURRENT_DATE,'YYYY-MM-DD') THEN 0
+           WHEN preferred_date > TO_CHAR(CURRENT_DATE,'YYYY-MM-DD') THEN 1
            ELSE 2 END,
       preferred_date ASC, preferred_time ASC`;
     const whereClause = where.length ? ' WHERE ' + where.join(' AND ') : '';
