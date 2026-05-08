@@ -385,6 +385,9 @@ async function populateStylistFilter() {
   if (!data) return;
   const bar = $('#stylist-filter-bar');
 
+  // Remove any previously added stylist buttons (keep the "All" button)
+  $$('.stylist-avatar:not(.stylist-avatar--all)', bar).forEach(b => b.remove());
+
   data.forEach(s => {
     const photo = s.photo_url || (s.photo ? `/uploads/${s.photo}` : '');
     const btn = document.createElement('button');
