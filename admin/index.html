@@ -276,6 +276,19 @@
         <!-- List view -->
         <div id="booking-list-view">
 
+          <!-- Today's bookings card -->
+          <div class="dash-recent-card today-bookings-card" id="today-bookings-card" style="margin-bottom:1.5rem;">
+            <div class="dash-recent-card__head">
+              <h3>Today's Schedule <span class="today-date-pill" id="today-pill"></span></h3>
+            </div>
+            <div class="table-wrap">
+              <table id="today-bookings-table">
+                <thead><tr><th>Client</th><th>Service</th><th>Time</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
           <!-- Stylist avatar filter bar -->
           <div class="stylist-filter-bar" id="stylist-filter-bar">
             <button class="stylist-avatar stylist-avatar--all active" data-stylist="">
@@ -315,16 +328,18 @@
         <div id="booking-schedule-view" hidden>
           <div class="toolbar">
             <div class="toolbar__left">
+              <div class="view-toggle" style="margin-right:.75rem;">
+                <button class="view-toggle__btn" id="sched-mode-week">Week</button>
+                <button class="view-toggle__btn" id="sched-mode-day">Day</button>
+              </div>
               <button class="btn btn-sm btn-outline" id="sched-prev">←</button>
-              <strong id="sched-date-label" style="min-width:180px;text-align:center;"></strong>
+              <strong id="sched-date-label" style="min-width:200px;text-align:center;"></strong>
               <button class="btn btn-sm btn-outline" id="sched-next">→</button>
               <button class="btn btn-sm btn-outline" id="sched-today">Today</button>
             </div>
             <button class="btn btn-sm btn-primary" id="sched-refresh">↻ Refresh</button>
           </div>
-          <div class="card">
-            <div class="table-wrap" id="sched-wrap"></div>
-          </div>
+          <div id="sched-wrap"></div>
         </div>
       </section>
 

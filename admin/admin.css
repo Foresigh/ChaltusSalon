@@ -1353,3 +1353,104 @@ textarea { resize: vertical; }
   background: #4ade80;
   flex-shrink: 0;
 }
+
+/* ---- Today's bookings card ---- */
+.today-date-pill {
+  display: inline-block;
+  background: linear-gradient(135deg, #0a0a0a 0%, #2d2d2d 100%);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.2rem 0.65rem;
+  border-radius: 20px;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+  margin-left: 0.5rem;
+}
+.today-date-pill::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+  margin-right: 0.35rem;
+  vertical-align: middle;
+}
+
+/* ---- Week schedule grid ---- */
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.75rem;
+  padding: 1rem;
+}
+@media (max-width: 1100px) { .week-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 700px)  { .week-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.week-day-card {
+  background: var(--white);
+  border: 1.5px solid var(--gray-100);
+  border-radius: 12px;
+  overflow: hidden;
+  min-height: 160px;
+}
+.week-day-card--today {
+  border-color: var(--black);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+}
+.week-day-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--gray-100);
+  background: var(--gray-50);
+}
+.week-day-card--today .week-day-head { background: var(--black); }
+.week-day-name {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--gray-400);
+}
+.week-day-card--today .week-day-name { color: rgba(255,255,255,0.6); }
+.week-day-num {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--gray-700);
+}
+.week-day-num--today {
+  color: #fff;
+}
+.week-day-count {
+  margin-left: auto;
+  background: var(--gray-200);
+  color: var(--gray-600);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.1rem 0.45rem;
+  border-radius: 10px;
+}
+.week-day-card--today .week-day-count { background: rgba(255,255,255,0.2); color: #fff; }
+.week-day-body { padding: 0.5rem; display: flex; flex-direction: column; gap: 0.4rem; }
+.week-day-empty { font-size: 0.72rem; color: var(--gray-300); padding: 0.25rem 0.25rem; }
+
+.week-booking {
+  padding: 0.4rem 0.55rem;
+  border-radius: 8px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  background: var(--gray-50);
+  transition: background 0.15s;
+}
+.week-booking:hover { background: var(--gray-100); }
+.week-booking--pending   { border-left-color: #f59e0b; }
+.week-booking--confirmed { border-left-color: #10b981; }
+.week-booking--completed { border-left-color: #6366f1; }
+.week-booking--cancelled { border-left-color: var(--gray-300); opacity: 0.5; }
+.week-bk-time   { display: block; font-size: 0.68rem; font-weight: 700; color: var(--gray-500); margin-bottom: 1px; }
+.week-bk-name   { display: block; font-size: 0.78rem; font-weight: 600; color: var(--black); }
+.week-bk-svc    { display: block; font-size: 0.72rem; color: var(--gray-500); }
+.week-bk-stylist{ display: block; font-size: 0.68rem; color: var(--gray-400); }

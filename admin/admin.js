@@ -98,6 +98,7 @@ function switchTab(tab) {
   $('#page-title').textContent = TAB_TITLES[tab] ?? tab;
   if (tab === 'dashboard')   loadDashboard();
   if (tab === 'bookings') {
+    loadTodayCard();
     loadBookings(true);
   }
   if (tab === 'gallery')     loadGallery();
@@ -330,7 +331,7 @@ $('#view-schedule-btn').addEventListener('click', () => {
   $('#view-list-btn').classList.remove('active');
   $('#booking-schedule-view').hidden = false;
   $('#booking-list-view').hidden = true;
-  loadSchedule();
+  setSchedMode('week');
 });
 
 // ── List view ─────────────────────────────────────────────────────────────────
@@ -620,6 +621,7 @@ $('#manual-booking-form').addEventListener('submit', async e => {
     $('#manual-booking-modal').hidden = true;
     $('#manual-booking-form').reset();
     loadDashboard();
+    loadTodayCard();
     loadBookings(true);
   } else {
     err.textContent = (res && res.error) || 'Failed to create booking.';
@@ -639,7 +641,7 @@ $('#booking-filter-clear').addEventListener('click', () => {
   $('#booking-filter-date').value   = '';
   loadBookings(true);
 });
-$('#booking-refresh').addEventListener('click', () => loadBookings(true));
+$('#booking-refresh').addEventListener('click', () => { loadTodayCard(); loadBookings(true); });
 
 // ── Schedule view ─────────────────────────────────────────────────────────────
 async function loadSchedule() {
@@ -727,10 +729,152 @@ async function loadSchedule() {
   });
 }
 
-$('#sched-prev').addEventListener('click',    () => { schedDate.setDate(schedDate.getDate()-1); loadSchedule(); });
-$('#sched-next').addEventListener('click',    () => { schedDate.setDate(schedDate.getDate()+1); loadSchedule(); });
-$('#sched-today').addEventListener('click',   () => { schedDate = new Date(); schedDate.setHours(0,0,0,0); loadSchedule(); });
-$('#sched-refresh').addEventListener('click', () => loadSchedule());
+// ── Schedule mode (week / day) ────────────────────────────────────────────────
+let schedMode = 'week';
+
+function setSchedMode(mode) {
+  schedMode = mode;
+  $('#sched-mode-week').classList.toggle('active', mode === 'week');
+  $('#sched-mode-day').classList.toggle('active',  mode === 'day');
+  if (mode === 'week') loadScheduleWeek();
+  else                 loadSchedule();
+}
+
+$('#sched-mode-week').addEventListener('click', () => setSchedMode('week'));
+$('#sched-mode-day').addEventListener('click',  () => setSchedMode('day'));
+
+$('#sched-prev').addEventListener('click', () => {
+  if (schedMode === 'week') { schedDate.setDate(schedDate.getDate() - 7); loadScheduleWeek(); }
+  else { schedDate.setDate(schedDate.getDate() - 1); loadSchedule(); }
+});
+$('#sched-next').addEventListener('click', () => {
+  if (schedMode === 'week') { schedDate.setDate(schedDate.getDate() + 7); loadScheduleWeek(); }
+  else { schedDate.setDate(schedDate.getDate() + 1); loadSchedule(); }
+});
+$('#sched-today').addEventListener('click', () => {
+  schedDate = new Date(); schedDate.setHours(0,0,0,0);
+  if (schedMode === 'week') loadScheduleWeek(); else loadSchedule();
+});
+$('#sched-refresh').addEventListener('click', () => {
+  if (schedMode === 'week') loadScheduleWeek(); else loadSchedule();
+});
+
+async function loadScheduleWeek() {
+  // Find Monday of current week
+  const monday = new Date(schedDate);
+  const day = monday.getDay(); // 0=Sun
+  monday.setDate(monday.getDate() - (day === 0 ? 6 : day - 1));
+
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return d;
+  });
+
+  const weekStart = dateToStr(days[0]);
+  const weekEnd   = dateToStr(days[6]);
+  const label = `${days[0].toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${days[6].toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
+  $('#sched-date-label').textContent = label;
+
+  // Fetch all bookings for the week in one call
+  const allBookings = await Promise.all(
+    days.map(d => apiFetch(`/api/bookings?date=${dateToStr(d)}&limit=100`))
+  );
+  if (allBookings.some(r => r === null)) return;
+
+  const todayISO = todayStr();
+  const wrap = $('#sched-wrap');
+  wrap.innerHTML = '';
+  const grid = document.createElement('div');
+  grid.className = 'week-grid';
+
+  days.forEach((d, i) => {
+    const iso       = dateToStr(d);
+    const isToday   = iso === todayISO;
+    const dayName   = d.toLocaleDateString('en-US', { weekday: 'short' });
+    const dayNum    = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const bookings  = (allBookings[i]?.rows || []).sort((a,b) => {
+      const toMins = t => { const m=t?.match(/(\d+):(\d+)\s*(AM|PM)/i); if(!m) return 0; let h=+m[1]; if(m[3].toUpperCase()==='PM'&&h!==12)h+=12; if(m[3].toUpperCase()==='AM'&&h===12)h=0; return h*60+ +m[2]; };
+      return toMins(a.preferred_time) - toMins(b.preferred_time);
+    });
+
+    const card = document.createElement('div');
+    card.className = `week-day-card${isToday ? ' week-day-card--today' : ''}`;
+
+    card.innerHTML = `
+      <div class="week-day-head">
+        <span class="week-day-name">${dayName}</span>
+        <span class="week-day-num${isToday ? ' week-day-num--today' : ''}">${dayNum}</span>
+        ${bookings.length ? `<span class="week-day-count">${bookings.length}</span>` : ''}
+      </div>
+      <div class="week-day-body">
+        ${bookings.length ? bookings.map(b => `
+          <div class="week-booking week-booking--${b.status}" data-id="${b.id}">
+            <span class="week-bk-time">${escHTML(b.preferred_time)}</span>
+            <span class="week-bk-name">${escHTML(b.client_name)}</span>
+            <span class="week-bk-svc">${escHTML(b.service_name)}</span>
+            <span class="week-bk-stylist">${escHTML(b.stylist_name)}</span>
+          </div>`).join('')
+        : '<span class="week-day-empty">No bookings</span>'}
+      </div>`;
+
+    card.querySelectorAll('.week-booking[data-id]').forEach(el => {
+      el.addEventListener('click', () => {
+        const b = bookings.find(r => String(r.id) === el.dataset.id);
+        if (b) openBookingModal(b);
+      });
+    });
+
+    grid.appendChild(card);
+  });
+
+  wrap.appendChild(grid);
+}
+
+// ── Today's bookings card ─────────────────────────────────────────────────────
+async function loadTodayCard() {
+  const pill = $('#today-pill');
+  const today = new Date();
+  if (pill) pill.textContent = today.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+
+  const data = await apiFetch(`/api/bookings?date=${todayStr()}&limit=100`);
+  const tbody = $('#today-bookings-table tbody');
+  const rows = data?.rows || [];
+  const card = $('#today-bookings-card');
+
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No bookings today.</td></tr>`;
+    return;
+  }
+
+  rows.sort((a, b) => {
+    const toMins = t => { const m=t?.match(/(\d+):(\d+)\s*(AM|PM)/i); if(!m) return 0; let h=+m[1]; if(m[3].toUpperCase()==='PM'&&h!==12)h+=12; if(m[3].toUpperCase()==='AM'&&h===12)h=0; return h*60+ +m[2]; };
+    return toMins(a.preferred_time) - toMins(b.preferred_time);
+  });
+
+  tbody.innerHTML = rows.map(b => `
+    <tr class="booking-row" data-id="${b.id}" style="cursor:pointer;">
+      <td><strong>${escHTML(b.client_name)}</strong><br><span style="font-size:.75rem;color:var(--gray-400)">${escHTML(b.client_email)}</span></td>
+      <td>${escHTML(b.service_name)}</td>
+      <td>
+        <div class="appt-time-cell">
+          <span class="appt-time-start">${escHTML(b.preferred_time)}</span>
+          ${calcEndTime(b.preferred_time, b.service_duration_mins) ? `<span class="appt-time-arrow">→</span><span class="appt-time-end">${calcEndTime(b.preferred_time, b.service_duration_mins)}</span>` : ''}
+        </div>
+        ${b.service_duration_mins ? `<span class="appt-duration-pill">${fmtDuration(b.service_duration_mins)}</span>` : ''}
+      </td>
+      <td>${statusBadge(b.status)}</td>
+      <td><button class="btn-icon del-booking" data-id="${b.id}" title="Delete">🗑</button></td>
+    </tr>`).join('');
+
+  tbody.querySelectorAll('.booking-row').forEach(row => {
+    row.addEventListener('click', e => {
+      if (e.target.closest('.del-booking')) return;
+      const b = rows.find(r => String(r.id) === row.dataset.id);
+      if (b) openBookingModal(b);
+    });
+  });
+}
 
 // ── Booking detail modal ──────────────────────────────────────────────────────
 let modalBookingId = null;
