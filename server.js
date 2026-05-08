@@ -824,9 +824,11 @@ app.get('/api/bookings', auth, async (req, res) => {
     if (status)  { params.push(status);  where.push(`status = $${params.length}`); }
     if (date)    { params.push(date);    where.push(`preferred_date = $${params.length}`); }
     if (stylist) { params.push(stylist); where.push(`stylist_name = $${params.length}`); }
-    const order = sort === 'newest'
-      ? 'ORDER BY created_at DESC'
-      : 'ORDER BY preferred_date ASC, preferred_time ASC, created_at DESC';
+    const order = `ORDER BY
+      CASE WHEN preferred_date = CURRENT_DATE THEN 0
+           WHEN preferred_date > CURRENT_DATE THEN 1
+           ELSE 2 END,
+      preferred_date ASC, preferred_time ASC`;
     const whereClause = where.length ? ' WHERE ' + where.join(' AND ') : '';
 
     // Count total for pagination
