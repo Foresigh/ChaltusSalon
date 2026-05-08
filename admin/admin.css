@@ -1329,3 +1329,27 @@ textarea { resize: vertical; }
 }
 .pagination-info { margin-right: auto; }
 .pagination-pages { color: var(--gray-700); font-weight: 500; }
+
+/* ---- Today date highlight ---- */
+.date-today {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: linear-gradient(135deg, #0a0a0a 0%, #2d2d2d 100%);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.78rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 20px;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.date-today::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+  flex-shrink: 0;
+}

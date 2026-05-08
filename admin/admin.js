@@ -485,7 +485,9 @@ function renderBookingRows(tbody, rows, compact) {
       ${compact ? '' : `<td>${escHTML(b.client_phone)}</td>`}
       <td>${escHTML(b.service_name)}</td>
       ${compact ? '' : `<td>${escHTML(b.stylist_name)}</td>`}
-      <td>${fmt(b.preferred_date)}</td>
+      <td>${b.preferred_date === todayStr()
+        ? `<span class="date-today">${fmt(b.preferred_date)}</span>`
+        : fmt(b.preferred_date)}</td>
       <td>
         <div class="appt-time-cell">
           <span class="appt-time-start">${escHTML(b.preferred_time)}</span>
