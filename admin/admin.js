@@ -331,9 +331,12 @@ $('#view-schedule-btn').addEventListener('click', () => {
   $('#view-list-btn').classList.remove('active');
   $('#booking-schedule-view').hidden = false;
   $('#booking-list-view').hidden = true;
-  const sw = document.getElementById('sched-wrap');
-  if (sw) sw.innerHTML = '<p style="padding:1rem">Loading schedule…</p>';
-  setSchedMode('week');
+  schedMode = 'week';
+  const mw = document.getElementById('sched-mode-week');
+  const md = document.getElementById('sched-mode-day');
+  if (mw) mw.classList.add('active');
+  if (md) md.classList.remove('active');
+  loadScheduleWeek();
 });
 
 // ── List view ─────────────────────────────────────────────────────────────────
