@@ -839,13 +839,21 @@ async function loadTodayCard() {
   const today = new Date();
   if (pill) pill.textContent = today.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
 
-  const data = await apiFetch(`/api/bookings?date=${todayStr()}&limit=100`);
+  const [data, stylistList] = await Promise.all([
+    apiFetch(`/api/bookings?date=${todayStr()}&limit=100`),
+    apiFetch('/api/stylists'),
+  ]);
   const tbody = $('#today-bookings-table tbody');
   const rows = data?.rows || [];
-  const card = $('#today-bookings-card');
+
+  // Build photo map: stylist name → photo url
+  const photoMap = {};
+  (stylistList || []).forEach(s => {
+    photoMap[s.name] = s.photo_url || (s.photo ? `/uploads/${s.photo}` : '');
+  });
 
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No bookings today.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-state">No bookings today.</td></tr>`;
     return;
   }
 
@@ -854,10 +862,26 @@ async function loadTodayCard() {
     return toMins(a.preferred_time) - toMins(b.preferred_time);
   });
 
-  tbody.innerHTML = rows.map(b => `
+  tbody.innerHTML = rows.map(b => {
+    const photo = photoMap[b.stylist_name] || '';
+    const initials = (b.stylist_name || '').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    const stylistCell = `
+      <div class="today-stylist-cell">
+        <span class="today-stylist-avatar">
+          ${photo
+            ? `<img src="${escHTML(photo)}" alt="${escHTML(b.stylist_name)}" />`
+            : `<span class="today-stylist-initials">${escHTML(initials)}</span>`}
+        </span>
+        <span class="today-stylist-name">${escHTML(b.stylist_name || '—')}</span>
+      </div>`;
+    return `
     <tr class="booking-row" data-id="${b.id}" style="cursor:pointer;">
       <td><strong>${escHTML(b.client_name)}</strong><br><span style="font-size:.75rem;color:var(--gray-400)">${escHTML(b.client_email)}</span></td>
       <td>${escHTML(b.service_name)}</td>
+      <td>${stylistCell}</td>
+      <td>${String(b.preferred_date).slice(0,10) === todayStr()
+        ? `<span class="date-today">${fmt(b.preferred_date)}</span>`
+        : fmt(b.preferred_date)}</td>
       <td>
         <div class="appt-time-cell">
           <span class="appt-time-start">${escHTML(b.preferred_time)}</span>
@@ -867,7 +891,8 @@ async function loadTodayCard() {
       </td>
       <td>${statusBadge(b.status)}</td>
       <td><button class="btn-icon del-booking" data-id="${b.id}" title="Delete">🗑</button></td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 
   tbody.querySelectorAll('.booking-row').forEach(row => {
     row.addEventListener('click', e => {
