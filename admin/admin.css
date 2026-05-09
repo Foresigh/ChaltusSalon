@@ -1378,33 +1378,32 @@ textarea { resize: vertical; }
   vertical-align: middle;
 }
 
+/* ---- Shared circular stylist avatar (Today card + filter bar fallback) ---- */
+.stylist-circ-avatar {
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--gray-100);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.stylist-circ-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.stylist-circ-avatar--icon {
+  background: var(--gray-100);
+  color: var(--gray-500);
+}
+
 /* ---- Today card stylist cell ---- */
 .today-stylist-cell {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
-.today-stylist-avatar {
-  flex-shrink: 0;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  overflow: hidden;
-  background: var(--gray-100);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.today-stylist-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.today-stylist-initials {
-  font-size: 0.65rem;
-  font-weight: 600;
-  color: var(--gray-500);
-  letter-spacing: 0.02em;
 }
 .today-stylist-name {
   font-size: 0.85rem;
@@ -1487,4 +1486,5 @@ textarea { resize: vertical; }
 .week-bk-time   { display: block; font-size: 0.68rem; font-weight: 700; color: var(--gray-500); margin-bottom: 1px; }
 .week-bk-name   { display: block; font-size: 0.78rem; font-weight: 600; color: var(--black); }
 .week-bk-svc    { display: block; font-size: 0.72rem; color: var(--gray-500); }
-.week-bk-stylist{ display: block; font-size: 0.68rem; color: var(--gray-400); }
+.week-bk-stylist{ display: flex; align-items: center; gap: 0.25rem; font-size: 0.68rem; color: var(--gray-400); margin-top: 2px; }
+.week-bk-stylist svg { flex-shrink: 0; opacity: 0.6; }

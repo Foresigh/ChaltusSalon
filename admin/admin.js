@@ -10,6 +10,16 @@ const API = '';  // same origin
 const $ = (sel, ctx = document) => ctx.querySelector(sel);
 const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
 
+const SCISSORS_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>`;
+
+function stylistAvatarHtml(name, photo, size = 30) {
+  const style = `width:${size}px;height:${size}px;`;
+  if (photo) {
+    return `<span class="stylist-circ-avatar" style="${style}"><img src="${escHTML(photo)}" alt="${escHTML(name)}" /></span>`;
+  }
+  return `<span class="stylist-circ-avatar stylist-circ-avatar--icon" style="${style}">${SCISSORS_SVG}</span>`;
+}
+
 let token = localStorage.getItem('chaltus_admin_token') || '';
 let currentRole = localStorage.getItem('chaltus_admin_role') || 'staff';
 
@@ -394,12 +404,7 @@ async function populateStylistFilter() {
     btn.className = 'stylist-avatar';
     btn.dataset.stylist = s.name;
     btn.innerHTML = `
-      <span class="stylist-avatar__img">
-        ${photo
-          ? `<img src="${escHTML(photo)}" alt="${escHTML(s.name)}" />`
-          : `<span class="stylist-avatar__initials">${escHTML(s.name.split(' ').map(w=>w[0]).join('').slice(0,2))}</span>`
-        }
-      </span>
+      ${stylistAvatarHtml(s.name, photo, 36)}
       <span class="stylist-avatar__name">${escHTML(s.name.split(' ')[0])}</span>
     `;
     btn.addEventListener('click', () => {
@@ -797,7 +802,7 @@ function renderWeekGrid(days, allRows) {
             <span class="week-bk-time">${escHTML(b.preferred_time)}</span>
             <span class="week-bk-name">${escHTML(b.client_name)}</span>
             <span class="week-bk-svc">${escHTML(b.service_name)}</span>
-            <span class="week-bk-stylist">${escHTML(b.stylist_name)}</span>
+            <span class="week-bk-stylist">${SCISSORS_SVG}${escHTML(b.stylist_name)}</span>
           </div>`).join('')
           : '<span class="week-day-empty">No bookings</span>'}
       </div>`;
@@ -864,15 +869,10 @@ async function loadTodayCard() {
 
   tbody.innerHTML = rows.map(b => {
     const photo = photoMap[b.stylist_name] || '';
-    const initials = (b.stylist_name || '').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
     const stylistCell = `
       <div class="today-stylist-cell">
-        <span class="today-stylist-avatar">
-          ${photo
-            ? `<img src="${escHTML(photo)}" alt="${escHTML(b.stylist_name)}" />`
-            : `<span class="today-stylist-initials">${escHTML(initials)}</span>`}
-        </span>
-        <span class="today-stylist-name">${escHTML(b.stylist_name || '—')}</span>
+        ${stylistAvatarHtml(b.stylist_name, photo, 30)}
+        <span class="today-stylist-name">${escHTML(b.stylist_name || 'Any Stylist')}</span>
       </div>`;
     return `
     <tr class="booking-row" data-id="${b.id}" style="cursor:pointer;">
