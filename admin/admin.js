@@ -633,7 +633,6 @@ $('#manual-booking-form').addEventListener('submit', async e => {
 });
 
 $('#booking-filter-status').addEventListener('change', () => loadBookings(true));
-$('#booking-filter-stylist').addEventListener('change', () => loadBookings(true));
 $('#booking-filter-date').addEventListener('change', () => loadBookings(true));
 $('#booking-today-btn').addEventListener('click', () => {
   $('#booking-filter-date').value = todayStr();
@@ -818,25 +817,19 @@ function renderWeekGrid(days, allRows) {
 async function loadScheduleWeek() {
   const sw = document.getElementById('sched-wrap');
   try {
-    if (sw) sw.innerHTML = '<p style="padding:1rem;color:#888">Step 1: building days…</p>';
+    if (sw) sw.innerHTML = '<p style="padding:1rem;color:#888">Loading schedule…</p>';
     const days  = buildWeekDays();
-    if (sw) sw.innerHTML = '<p style="padding:1rem;color:#888">Step 2: setting label…</p>';
     const label = `${days[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${days[6].toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
     const lbl = document.getElementById('sched-date-label');
     if (lbl) lbl.textContent = label;
-    if (sw) sw.innerHTML = '<p style="padding:1rem;color:#888">Step 3: rendering skeleton…</p>';
     renderWeekGrid(days, []);
-    if (sw) sw.innerHTML = (sw.innerHTML || '') + '<p style="padding:.5rem 1rem;color:#888">Step 4: fetching data…</p>';
     const weekData = await apiFetch(`/api/bookings?date_from=${dateToStr(days[0])}&date_to=${dateToStr(days[6])}&limit=200`);
-    if (sw) sw.innerHTML = (sw.innerHTML || '') + `<p style="padding:.5rem 1rem;color:#888">Step 5: got response rows=${weekData?.rows?.length ?? 'null'}</p>`;
     if (weekData && weekData.rows) {
       renderWeekGrid(days, weekData.rows);
-    } else {
-      if (sw) sw.innerHTML = `<p style="padding:1rem;color:red;">No rows: ${JSON.stringify(weekData)}</p>`;
     }
   } catch (e) {
     console.error('loadScheduleWeek error:', e);
-    if (sw) sw.innerHTML = `<p style="padding:1rem;color:red;">Error at: ${e.message}</p>`;
+    if (sw) sw.innerHTML = `<p style="padding:1rem;color:red;">Error: ${e.message}</p>`;
   }
 }
 
