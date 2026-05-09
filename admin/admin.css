@@ -1486,5 +1486,6 @@ textarea { resize: vertical; }
 .week-bk-time   { display: block; font-size: 0.68rem; font-weight: 700; color: var(--gray-500); margin-bottom: 1px; }
 .week-bk-name   { display: block; font-size: 0.78rem; font-weight: 600; color: var(--black); }
 .week-bk-svc    { display: block; font-size: 0.72rem; color: var(--gray-500); }
-.week-bk-stylist{ display: flex; align-items: center; gap: 0.25rem; font-size: 0.68rem; color: var(--gray-400); margin-top: 2px; }
-.week-bk-stylist svg { flex-shrink: 0; opacity: 0.6; }
+.week-bk-stylist{ display: flex; align-items: center; gap: 0.3rem; font-size: 0.68rem; color: var(--gray-400); margin-top: 3px; }
+.week-bk-stylist .stylist-circ-avatar { flex-shrink: 0; }
+.week-bk-stylist .stylist-circ-avatar svg { opacity: 0.6; }

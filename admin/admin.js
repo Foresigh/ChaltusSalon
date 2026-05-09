@@ -770,7 +770,7 @@ function buildWeekDays() {
   });
 }
 
-function renderWeekGrid(days, allRows) {
+function renderWeekGrid(days, allRows, photoMap = {}) {
   const toMins = t => { const m = t?.match(/(\d+):(\d+)\s*(AM|PM)/i); if (!m) return 0; let h = +m[1]; if (m[3].toUpperCase() === 'PM' && h !== 12) h += 12; if (m[3].toUpperCase() === 'AM' && h === 12) h = 0; return h * 60 + +m[2]; };
   const todayISO = todayStr();
   const wrap = document.getElementById('sched-wrap');
@@ -802,7 +802,7 @@ function renderWeekGrid(days, allRows) {
             <span class="week-bk-time">${escHTML(b.preferred_time)}</span>
             <span class="week-bk-name">${escHTML(b.client_name)}</span>
             <span class="week-bk-svc">${escHTML(b.service_name)}</span>
-            <span class="week-bk-stylist">${SCISSORS_SVG}${escHTML(b.stylist_name)}</span>
+            <span class="week-bk-stylist">${stylistAvatarHtml(b.stylist_name, photoMap[b.stylist_name] || '', 20)}${escHTML(b.stylist_name)}</span>
           </div>`).join('')
           : '<span class="week-day-empty">No bookings</span>'}
       </div>`;
@@ -828,9 +828,14 @@ async function loadScheduleWeek() {
     const lbl = document.getElementById('sched-date-label');
     if (lbl) lbl.textContent = label;
     renderWeekGrid(days, []);
-    const weekData = await apiFetch(`/api/bookings?date_from=${dateToStr(days[0])}&date_to=${dateToStr(days[6])}&limit=200`);
+    const [weekData, stylistList] = await Promise.all([
+      apiFetch(`/api/bookings?date_from=${dateToStr(days[0])}&date_to=${dateToStr(days[6])}&limit=200`),
+      apiFetch('/api/stylists'),
+    ]);
+    const photoMap = {};
+    (stylistList || []).forEach(s => { photoMap[s.name] = s.photo_url || (s.photo ? `/uploads/${s.photo}` : ''); });
     if (weekData && weekData.rows) {
-      renderWeekGrid(days, weekData.rows);
+      renderWeekGrid(days, weekData.rows, photoMap);
     }
   } catch (e) {
     console.error('loadScheduleWeek error:', e);
