@@ -331,6 +331,8 @@ $('#view-schedule-btn').addEventListener('click', () => {
   $('#view-list-btn').classList.remove('active');
   $('#booking-schedule-view').hidden = false;
   $('#booking-list-view').hidden = true;
+  const sw = document.getElementById('sched-wrap');
+  if (sw) sw.innerHTML = '<p style="padding:1rem">Loading schedule…</p>';
   setSchedMode('week');
 });
 
@@ -742,8 +744,6 @@ function setSchedMode(mode) {
   const dBtn = $('#sched-mode-day');
   if (wBtn) wBtn.classList.toggle('active', mode === 'week');
   if (dBtn) dBtn.classList.toggle('active',  mode === 'day');
-  const wrap = $('#sched-wrap');
-  if (wrap) wrap.innerHTML = '<p style="padding:1rem;color:#888;">Loading…</p>';
   if (mode === 'week') loadScheduleWeek();
   else                 loadSchedule();
 }
@@ -771,8 +771,8 @@ function buildWeekDays() {
 function renderWeekGrid(days, allRows) {
   const toMins = t => { const m = t?.match(/(\d+):(\d+)\s*(AM|PM)/i); if (!m) return 0; let h = +m[1]; if (m[3].toUpperCase() === 'PM' && h !== 12) h += 12; if (m[3].toUpperCase() === 'AM' && h === 12) h = 0; return h * 60 + +m[2]; };
   const todayISO = todayStr();
-  const wrap = $('#sched-wrap') || $('#booking-schedule-view');
-  if (!wrap) return;
+  const wrap = document.getElementById('sched-wrap');
+  if (!wrap) { console.error('sched-wrap not found'); return; }
   wrap.innerHTML = '';
   const grid = document.createElement('div');
   grid.className = 'week-grid';
@@ -834,7 +834,7 @@ async function loadScheduleWeek() {
     }
   } catch (e) {
     console.error('loadScheduleWeek error:', e);
-    const w = $('#sched-wrap') || $('#booking-schedule-view');
+    const w = document.getElementById('sched-wrap');
     if (w) w.innerHTML = `<p style="padding:1rem;color:red;">Error: ${e.message}</p>`;
   }
 }
