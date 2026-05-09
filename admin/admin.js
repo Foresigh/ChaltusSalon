@@ -818,24 +818,27 @@ function renderWeekGrid(days, allRows) {
 }
 
 async function loadScheduleWeek() {
+  const sw = document.getElementById('sched-wrap');
   try {
+    if (sw) sw.innerHTML = '<p style="padding:1rem;color:#888">Step 1: building days…</p>';
     const days  = buildWeekDays();
+    if (sw) sw.innerHTML = '<p style="padding:1rem;color:#888">Step 2: setting label…</p>';
     const label = `${days[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${days[6].toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
-    $('#sched-date-label').textContent = label;
-
-    // Render skeleton immediately so grid is visible before fetch
+    const lbl = document.getElementById('sched-date-label');
+    if (lbl) lbl.textContent = label;
+    if (sw) sw.innerHTML = '<p style="padding:1rem;color:#888">Step 3: rendering skeleton…</p>';
     renderWeekGrid(days, []);
-
+    if (sw) sw.innerHTML = (sw.innerHTML || '') + '<p style="padding:.5rem 1rem;color:#888">Step 4: fetching data…</p>';
     const weekData = await apiFetch(`/api/bookings?date_from=${dateToStr(days[0])}&date_to=${dateToStr(days[6])}&limit=200`);
+    if (sw) sw.innerHTML = (sw.innerHTML || '') + `<p style="padding:.5rem 1rem;color:#888">Step 5: got response rows=${weekData?.rows?.length ?? 'null'}</p>`;
     if (weekData && weekData.rows) {
       renderWeekGrid(days, weekData.rows);
-    } else if (weekData && weekData.error) {
-      $('#sched-wrap').innerHTML = `<p style="padding:1rem;color:red;">API error: ${weekData.error}</p>`;
+    } else {
+      if (sw) sw.innerHTML = `<p style="padding:1rem;color:red;">No rows: ${JSON.stringify(weekData)}</p>`;
     }
   } catch (e) {
     console.error('loadScheduleWeek error:', e);
-    const w = document.getElementById('sched-wrap');
-    if (w) w.innerHTML = `<p style="padding:1rem;color:red;">Error: ${e.message}</p>`;
+    if (sw) sw.innerHTML = `<p style="padding:1rem;color:red;">Error at: ${e.message}</p>`;
   }
 }
 
