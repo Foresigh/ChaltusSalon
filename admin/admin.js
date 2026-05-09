@@ -29,7 +29,11 @@ async function apiFetch(path, opts = {}) {
     ...opts,
   });
   if (res.status === 401) { logout(); return null; }
-  return res.json();
+  try {
+    return await res.json();
+  } catch {
+    return { error: `Server error (HTTP ${res.status})` };
+  }
 }
 
 async function apiUpload(path, formData) {
@@ -1607,11 +1611,13 @@ function bootApp() {
 
 // Auto-login if token present
 if (token) {
-  // Quick verify by loading stats
   apiFetch('/api/stats').then(d => {
     if (d) {
       const payload = JSON.parse(atob(token.split('.')[1]));
       $('#topbar-user').textContent = payload.username;
+      // Always sync role from JWT so localStorage never drifts out of sync
+      currentRole = payload.role || 'staff';
+      localStorage.setItem('chaltus_admin_role', currentRole);
       bootApp();
     }
   });

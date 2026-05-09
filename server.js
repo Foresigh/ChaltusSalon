@@ -421,7 +421,10 @@ app.post('/api/users', auth, superadmin, async (req, res) => {
       [username, hash, role === 'superadmin' ? 'superadmin' : 'staff']
     );
     res.json(rows[0]);
-  } catch (err) { res.status(500).json({ error: 'Server error' }); }
+  } catch (err) {
+    console.error('POST /api/users error:', err.message);
+    res.status(500).json({ error: err.message || 'Server error' });
+  }
 });
 
 app.patch('/api/users/:id/password', auth, superadmin, async (req, res) => {
