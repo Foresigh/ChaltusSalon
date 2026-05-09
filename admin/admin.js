@@ -331,11 +331,6 @@ $('#view-schedule-btn').addEventListener('click', () => {
   $('#view-list-btn').classList.remove('active');
   $('#booking-schedule-view').hidden = false;
   $('#booking-list-view').hidden = true;
-  schedMode = 'week';
-  const mw = document.getElementById('sched-mode-week');
-  const md = document.getElementById('sched-mode-day');
-  if (mw) mw.classList.add('active');
-  if (md) md.classList.remove('active');
   loadScheduleWeek();
 });
 
