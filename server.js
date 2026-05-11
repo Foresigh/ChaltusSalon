@@ -829,11 +829,7 @@ app.get('/api/bookings', auth, async (req, res) => {
     if (date_from) { params.push(date_from); where.push(`preferred_date >= $${params.length}`); }
     if (date_to)   { params.push(date_to);   where.push(`preferred_date <= $${params.length}`); }
     if (stylist)   { params.push(stylist);   where.push(`stylist_name = $${params.length}`); }
-    const order = `ORDER BY
-      CASE WHEN preferred_date = TO_CHAR(CURRENT_DATE,'YYYY-MM-DD') THEN 0
-           WHEN preferred_date > TO_CHAR(CURRENT_DATE,'YYYY-MM-DD') THEN 1
-           ELSE 2 END,
-      preferred_date ASC, preferred_time ASC`;
+    const order = `ORDER BY b.id DESC`;
     const whereClause = where.length ? ' WHERE ' + where.join(' AND ') : '';
 
     // Count total for pagination
