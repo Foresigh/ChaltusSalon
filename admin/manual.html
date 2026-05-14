@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Chaltu's Salon — Admin Dashboard User Manual</title>
+<style>
+  :root {
+    --gold: #b89b6a;
+    --black: #0a0a0a;
+    --dark: #1a1a1a;
+    --gray: #6b7280;
+    --light: #f9fafb;
+    --border: #e5e7eb;
+    --radius: 8px;
+    --font: 'Segoe UI', -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); color: var(--dark); background: #fff; font-size: 15px; line-height: 1.7; }
+  a { color: var(--gold); text-decoration: none; }
+
+  /* ── Cover ── */
+  .cover {
+    background: var(--black);
+    color: #fff;
+    padding: 80px 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    page-break-after: always;
+  }
+  .cover__badge { font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); }
+  .cover__title { font-size: 3rem; font-weight: 700; line-height: 1.15; }
+  .cover__sub { font-size: 1.1rem; color: #9ca3af; max-width: 520px; }
+  .cover__meta { margin-top: 32px; font-size: .85rem; color: #6b7280; border-top: 1px solid #2d2d2d; padding-top: 20px; display: flex; gap: 40px; }
+  .cover__meta span strong { display: block; color: #fff; font-size: .9rem; }
+
+  /* ── TOC ── */
+  .toc { padding: 60px; page-break-after: always; }
+  .toc h2 { font-size: 1.4rem; font-weight: 700; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 2px solid var(--gold); }
+  .toc ol { padding-left: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 40px; }
+  .toc li { font-size: .95rem; padding: 4px 0; }
+  .toc li a { color: var(--dark); }
+  .toc li a:hover { color: var(--gold); }
+
+  /* ── Layout ── */
+  .section { padding: 60px; border-bottom: 1px solid var(--border); page-break-inside: avoid; }
+  .section:last-child { border-bottom: none; }
+
+  /* ── Headings ── */
+  h1 { font-size: 2rem; font-weight: 700; margin-bottom: 8px; }
+  h2 { font-size: 1.5rem; font-weight: 700; margin: 40px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--gold); }
+  h3 { font-size: 1.1rem; font-weight: 600; margin: 28px 0 10px; color: var(--dark); }
+  h4 { font-size: .95rem; font-weight: 600; margin: 20px 0 8px; color: var(--gray); text-transform: uppercase; letter-spacing: .06em; }
+  .section-num { display: inline-block; background: var(--gold); color: #fff; font-size: .7rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 10px; }
+
+  /* ── Screenshot frame ── */
+  .screenshot {
+    margin: 24px 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,.07);
+  }
+  .screenshot img { width: 100%; display: block; }
+  .screenshot__cap {
+    background: var(--light);
+    border-top: 1px solid var(--border);
+    padding: 8px 16px;
+    font-size: .8rem;
+    color: var(--gray);
+    font-style: italic;
+  }
+
+  /* ── Info boxes ── */
+  .box { border-radius: var(--radius); padding: 16px 20px; margin: 20px 0; font-size: .9rem; }
+  .box--tip  { background: #f0fdf4; border-left: 4px solid #22c55e; }
+  .box--warn { background: #fffbeb; border-left: 4px solid #f59e0b; }
+  .box--error{ background: #fef2f2; border-left: 4px solid #ef4444; }
+  .box--info { background: #eff6ff; border-left: 4px solid #3b82f6; }
+  .box strong { display: block; margin-bottom: 4px; font-size: .85rem; text-transform: uppercase; letter-spacing: .05em; }
+  .box--tip   strong { color: #16a34a; }
+  .box--warn  strong { color: #d97706; }
+  .box--error strong { color: #dc2626; }
+  .box--info  strong { color: #2563eb; }
+
+  /* ── Step list ── */
+  .steps { list-style: none; padding: 0; margin: 16px 0; counter-reset: steps; }
+  .steps li { counter-increment: steps; display: flex; gap: 14px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid #f3f4f6; }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(steps);
+    flex-shrink: 0;
+    width: 26px; height: 26px;
+    background: var(--black); color: #fff;
+    border-radius: 50%; font-size: .75rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 1px;
+  }
+
+  /* ── Field table ── */
+  .field-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: .9rem; }
+  .field-table th { background: var(--light); text-align: left; padding: 10px 14px; font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--gray); border-bottom: 2px solid var(--border); }
+  .field-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .field-table tr:last-child td { border-bottom: none; }
+  .field-table td:first-child { font-weight: 600; white-space: nowrap; }
+  .req { color: #ef4444; font-size: .75rem; }
+
+  /* ── Badge ── */
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: .75rem; font-weight: 600; }
+  .badge--pending   { background: #fef3c7; color: #b45309; }
+  .badge--confirmed { background: #d1fae5; color: #065f46; }
+  .badge--completed { background: #dbeafe; color: #1e40af; }
+  .badge--cancelled { background: #fee2e2; color: #991b1b; }
+  .badge--super     { background: #d1fae5; color: #065f46; }
+  .badge--staff     { background: #fef3c7; color: #b45309; }
+
+  /* ── Error reference table ── */
+  .error-table { width: 100%; border-collapse: collapse; font-size: .9rem; margin: 16px 0; }
+  .error-table th { background: #fef2f2; color: #991b1b; text-align: left; padding: 10px 14px; font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; border-bottom: 2px solid #fecaca; }
+  .error-table td { padding: 10px 14px; border-bottom: 1px solid #fee2e2; vertical-align: top; }
+  .error-table tr:last-child td { border-bottom: none; }
+  .error-table td:first-child { font-weight: 600; color: #dc2626; width: 35%; }
+
+  /* ── Print ── */
+  @media print {
+    .section { page-break-inside: avoid; }
+    .cover, .toc { page-break-after: always; }
+    body { font-size: 13px; }
+    .section { padding: 40px; }
+  }
+  @media (max-width: 768px) {
+    .section, .cover, .toc { padding: 32px 20px; }
+    .cover__title { font-size: 2rem; }
+    .toc ol { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     COVER
+══════════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover__badge">User Manual — v1.0</div>
+  <div class="cover__title">Chaltu's Salon<br>Admin Dashboard</div>
+  <div class="cover__sub">A complete guide to managing bookings, stylists, services, gallery, analytics, and users from the admin panel.</div>
+  <div class="cover__meta">
+    <span><strong>Website</strong>chaltusalon.com</span>
+    <span><strong>Admin URL</strong>chaltusalon.com/admin</span>
+    <span><strong>Version</strong>May 2026</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TABLE OF CONTENTS
+══════════════════════════════════════════ -->
+<div class="toc" id="toc">
+  <h2>Table of Contents</h2>
+  <ol>
+    <li><a href="#login">Logging In</a></li>
+    <li><a href="#dashboard">Dashboard Overview</a></li>
+    <li><a href="#bookings-list">Bookings — List View</a></li>
+    <li><a href="#bookings-schedule">Bookings — Schedule View</a></li>
+    <li><a href="#booking-detail">Booking Detail &amp; Actions</a></li>
+    <li><a href="#manual-booking">Creating a Manual Booking</a></li>
+    <li><a href="#stylists">Managing Stylists</a></li>
+    <li><a href="#services">Managing Services</a></li>
+    <li><a href="#gallery">Gallery</a></li>
+    <li><a href="#subscribers">Subscribers</a></li>
+    <li><a href="#analytics">Analytics</a></li>
+    <li><a href="#settings">Settings</a></li>
+    <li><a href="#users">Users &amp; Access</a></li>
+    <li><a href="#errors">Common Errors &amp; Fixes</a></li>
+  </ol>
+</div>
+
+<!-- ══════════════════════════════════════════
+     1. LOGIN
+══════════════════════════════════════════ -->
+<div class="section" id="login">
+  <div class="section-num">Section 1</div>
+  <h1>Logging In</h1>
+  <p>The admin dashboard is a secure, password-protected area. Only authorised staff with a valid username and password can access it.</p>
+
+  <h3>How to Access</h3>
+  <p>Open your browser and go to: <strong>chaltusalon.com/admin</strong></p>
+
+  <div class="screenshot">
+    <img src="screenshots/01-login.png" alt="Login Screen" />
+    <div class="screenshot__cap">Fig 1.1 — The login screen with the salon photo background and secure sign-in card.</div>
+  </div>
+
+  <h3>Sign In Steps</h3>
+  <ol class="steps">
+    <li>Enter your <strong>Username</strong> in the first field.</li>
+    <li>Enter your <strong>Password</strong> in the second field.</li>
+    <li>Click the <strong>Sign In</strong> button.</li>
+    <li>You will be taken directly to the Dashboard on success.</li>
+  </ol>
+
+  <div class="box box--info">
+    <strong>Stay Logged In</strong>
+    Your session is saved in the browser for 24 hours. If you close the tab and come back within that time, you will be logged in automatically without needing to enter your password again.
+  </div>
+
+  <h3>Login Errors</h3>
+  <table class="error-table">
+    <thead><tr><th>Error Message</th><th>What It Means &amp; How to Fix It</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>"Invalid username or password"</td>
+        <td>The username or password is incorrect. Check for typos and try again. Passwords are case-sensitive.</td>
+      </tr>
+      <tr>
+        <td>Nothing happens when clicking Sign In</td>
+        <td>Both fields are required. Make sure neither field is empty.</td>
+      </tr>
+      <tr>
+        <td>Page keeps loading / no response</td>
+        <td>Check your internet connection. If the issue persists, refresh the page and try again.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Logging Out</h3>
+  <p>Click <strong>Log Out</strong> at the bottom of the left sidebar at any time. You will be returned to the login screen immediately.</p>
+
+  <div class="box box--warn">
+    <strong>Security Tip</strong>
+    Always log out when using a shared or public computer. Your session token is stored in the browser and will remain active for 24 hours unless you explicitly log out.
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     2. DASHBOARD
+══════════════════════════════════════════ -->
+<div class="section" id="dashboard">
+  <div class="section-num">Section 2</div>
+  <h1>Dashboard Overview</h1>
+  <p>The Dashboard is the first screen you see after logging in. It gives you a real-time overview of your salon's performance, today's appointments, and recent bookings.</p>
+
+  <div class="screenshot">
+    <img src="screenshots/02-dashboard.png" alt="Dashboard" />
+    <div class="screenshot__cap">Fig 2.1 — The main dashboard showing stats, charts, and recent bookings.</div>
+  </div>
+
+  <h2>Navigation Sidebar</h2>
+  <p>The black sidebar on the left is your main navigation. Click any item to switch sections:</p>
+  <table class="field-table">
+    <thead><tr><th>Menu Item</th><th>What It Does</th></tr></thead>
+    <tbody>
+      <tr><td>Dashboard</td><td>Returns to the main overview screen.</td></tr>
+      <tr><td>Bookings</td><td>Manage all client appointments. The number badge shows pending bookings that need attention.</td></tr>
+      <tr><td>Gallery</td><td>Upload and manage the photo gallery shown on the website.</td></tr>
+      <tr><td>Stylists</td><td>Add, edit, or hide stylists shown on the website and in bookings.</td></tr>
+      <tr><td>Services</td><td>Manage the full service menu with pricing and durations.</td></tr>
+      <tr><td>Subscribers</td><td>View email subscribers who signed up from the website.</td></tr>
+      <tr><td>Users</td><td>Manage admin login accounts. <em>Superadmin only.</em></td></tr>
+      <tr><td>Analytics</td><td>View website traffic, top pages, referrers, and login history.</td></tr>
+      <tr><td>Settings</td><td>Change your account password.</td></tr>
+      <tr><td>View Site</td><td>Opens the public website in a new tab.</td></tr>
+      <tr><td>Log Out</td><td>Ends your session and returns to the login screen.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Stat Cards</h2>
+  <p>Five summary cards are displayed at the top of the dashboard:</p>
+  <table class="field-table">
+    <thead><tr><th>Card</th><th>What It Shows</th></tr></thead>
+    <tbody>
+      <tr><td>Deposits Collected</td><td>Total dollar value of deposits marked as paid across all bookings.</td></tr>
+      <tr><td>Total Bookings</td><td>All-time total number of bookings in the system.</td></tr>
+      <tr><td>Pending</td><td>Bookings that have been submitted but not yet confirmed.</td></tr>
+      <tr><td>Confirmed</td><td>Bookings that have been confirmed with the client.</td></tr>
+      <tr><td>Today's Appointments</td><td>Number of bookings scheduled for today's date.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Charts</h2>
+  <h3>Bookings — Last 30 Days</h3>
+  <p>A line chart showing how many bookings were received each day over the past 30 days. Hover over any point to see the exact count for that date. Useful for spotting busy periods and slow weeks.</p>
+
+  <h3>Top Services</h3>
+  <p>A doughnut chart showing which services are booked most often. Hover over any segment to see the service name and count. Use this to understand what your clients want most.</p>
+
+  <h2>Quick Actions</h2>
+  <table class="field-table">
+    <thead><tr><th>Button</th><th>What It Does</th></tr></thead>
+    <tbody>
+      <tr><td>+ New Booking</td><td>Opens the manual booking form to add an appointment directly (walk-in or phone booking).</td></tr>
+      <tr><td>Go to Site</td><td>Opens the public website in a new browser tab.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Maintenance Banner</h2>
+  <p>The banner at the top of the dashboard controls a site-wide notice shown to website visitors.</p>
+  <table class="field-table">
+    <thead><tr><th>State</th><th>What Visitors See</th></tr></thead>
+    <tbody>
+      <tr><td>🟢 No Banner (default)</td><td>The website looks completely normal to visitors.</td></tr>
+      <tr><td>🟡 Banner Showing</td><td>A yellow announcement banner appears at the top of the website saying the site is being updated.</td></tr>
+    </tbody>
+  </table>
+  <p>Click <strong>Show Banner</strong> or <strong>Hide Banner</strong> to toggle it on and off instantly.</p>
+
+  <h2>Recent Bookings</h2>
+  <p>A preview table at the bottom of the dashboard shows the most recent bookings. Click <strong>View all →</strong> to go to the full Bookings section. Today's bookings are highlighted with a dark date pill.</p>
+</div>
+
+<!-- ══════════════════════════════════════════
+     3. BOOKINGS — LIST VIEW
+══════════════════════════════════════════ -->
+<div class="section" id="bookings-list">
+  <div class="section-num">Section 3</div>
+  <h1>Bookings — List View</h1>
+  <p>The Bookings section is where you manage all client appointments. Click <strong>Bookings</strong> in the sidebar to open it. The default view is the <strong>List</strong>.</p>
+
+  <div class="screenshot">
+    <img src="screenshots/03-bookings-list.png" alt="Bookings List View" />
+    <div class="screenshot__cap">Fig 3.1 — Bookings list showing Today's Schedule at the top, stylist filter, and the full booking table.</div>
+  </div>
+
+  <div class="screenshot">
+    <img src="screenshots/03b-bookings-top.png" alt="Bookings Top Section" />
+    <div class="screenshot__cap">Fig 3.2 — Today's Schedule card and stylist filter bar at the top of the Bookings page.</div>
+  </div>
+
+  <h2>Today's Schedule Card</h2>
+  <p>At the very top of the Bookings page is a compact card showing only today's appointments, sorted by appointment time. This gives you a quick view of who is coming in today without any filtering needed.</p>
+  <p>Each row shows: <strong>Client name &amp; email, Service, Stylist (with photo), Date (highlighted), Time (with end time and duration), Status</strong>, and a delete button.</p>
+
+  <div class="box box--tip">
+    <strong>Today's Date Highlight</strong>
+    Any booking with today's date shows a dark pill badge (e.g. "● May 14, 2026") in the Date column to make it easy to spot at a glance.
+  </div>
+
+  <h2>Stylist Filter Bar</h2>
+  <p>Below Today's Schedule is a row of circular stylist photos. Click any stylist to filter the booking list to show only their appointments. Click <strong>All</strong> (scissors icon) to show all stylists again.</p>
+
+  <h2>Filters</h2>
+  <table class="field-table">
+    <thead><tr><th>Filter</th><th>How to Use</th></tr></thead>
+    <tbody>
+      <tr><td>All statuses</td><td>Dropdown to filter by Pending, Confirmed, Completed, or Cancelled. Select "All statuses" to show everything.</td></tr>
+      <tr><td>Date picker</td><td>Click the date field to pick a specific date and show only bookings for that day.</td></tr>
+      <tr><td>Today button</td><td>Shortcut to instantly filter to today's date.</td></tr>
+      <tr><td>All Dates button</td><td>Clears the date filter and shows all bookings.</td></tr>
+      <tr><td>↻ Refresh</td><td>Reloads the booking list from the server to show the latest data.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Booking Table Columns</h2>
+  <table class="field-table">
+    <thead><tr><th>Column</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>#</td><td>Booking number (ID). Higher numbers are newer bookings. Bookings are listed newest first by default.</td></tr>
+      <tr><td>Client</td><td>Client's full name and email address.</td></tr>
+      <tr><td>Phone</td><td>Client's phone number. Click to call on mobile devices.</td></tr>
+      <tr><td>Service</td><td>The service the client booked.</td></tr>
+      <tr><td>Stylist</td><td>The assigned stylist, or "Any stylist" if no preference was given.</td></tr>
+      <tr><td>Date</td><td>Appointment date. Today's date appears as a highlighted dark pill.</td></tr>
+      <tr><td>Time</td><td>Start time → End time with a duration pill (e.g. 5hr 30min).</td></tr>
+      <tr><td>Status</td><td>Current booking status: Pending, Confirmed, Completed, or Cancelled.</td></tr>
+      <tr><td>Payment</td><td>Shows "$ Mark Paid" or "✓ $30 Paid". Click to toggle payment status.</td></tr>
+      <tr><td>Notes</td><td>Any notes the client included when booking.</td></tr>
+      <tr><td>Actions</td><td>Status dropdown to quickly update status, and a 🗑 delete button.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Booking Status Meanings</h2>
+  <table class="field-table">
+    <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge badge--pending">PENDING</span></td><td>New booking received. Client is waiting for confirmation. Action needed.</td></tr>
+      <tr><td><span class="badge badge--confirmed">CONFIRMED</span></td><td>You have confirmed the appointment with the client.</td></tr>
+      <tr><td><span class="badge badge--completed">COMPLETED</span></td><td>The appointment was completed successfully.</td></tr>
+      <tr><td><span class="badge badge--cancelled">CANCELLED</span></td><td>The appointment was cancelled by the client or salon.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Changing a Booking Status</h2>
+  <p>There are two ways to update a booking's status:</p>
+  <ol class="steps">
+    <li><strong>Quick update:</strong> Use the dropdown in the Actions column of the booking row. The change saves immediately.</li>
+    <li><strong>Via detail modal:</strong> Click anywhere on the booking row to open the full detail view, then use the status dropdown at the bottom.</li>
+  </ol>
+
+  <h2>Marking Payment</h2>
+  <p>Click the <strong>$ Mark Paid</strong> button in the Payment column to record that the deposit has been collected in person. The button turns green and shows the amount. Click again to toggle it back to unpaid.</p>
+
+  <h2>Deleting a Booking</h2>
+  <p>Click the 🗑 icon in the Actions column. A confirmation prompt will appear asking you to confirm. Click <strong>Yes, delete</strong> to permanently remove the booking, or <strong>Cancel</strong> to go back.</p>
+
+  <div class="box box--error">
+    <strong>Warning — Permanent Action</strong>
+    Deleted bookings cannot be recovered. Only delete a booking if you are certain it is no longer needed.
+  </div>
+
+  <h2>Pagination</h2>
+  <p>Bookings are shown 25 per page. If there are more than 25, navigation arrows and a page counter appear below the table (e.g. "1–25 of 48"). Use <strong>← Prev</strong> and <strong>Next →</strong> to move between pages.</p>
+</div>
+
+<!-- ══════════════════════════════════════════
+     4. BOOKINGS — SCHEDULE VIEW
+══════════════════════════════════════════ -->
+<div class="section" id="bookings-schedule">
+  <div class="section-num">Section 4</div>
+  <h1>Bookings — Schedule View</h1>
+  <p>The Schedule view shows bookings in a visual calendar format. Click the <strong>⊞ Schedule</strong> button at the top of the Bookings page to switch to this view.</p>
+
+  <div class="screenshot">
+    <img src="screenshots/04-schedule.png" alt="Schedule Week View" />
+    <div class="screenshot__cap">Fig 4.1 — Week schedule view showing Mon–Sun with booking cards per day. Today's column has a dark header.</div>
+  </div>
+
+  <h2>Week View</h2>
+  <p>The default view shows the full current week (Monday through Sunday). Each day appears as a card with all bookings for that day listed in time order. Today's column has a <strong>black header</strong> to stand out from other days.</p>
+
+  <h3>What Each Booking Card Shows</h3>
+  <table class="field-table">
+    <thead><tr><th>Field</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>Time</td><td>Appointment start time in bold at the top of the card.</td></tr>
+      <tr><td>Client Name</td><td>The client's full name.</td></tr>
+      <tr><td>Service</td><td>The booked service.</td></tr>
+      <tr><td>Stylist</td><td>Stylist photo (or scissors icon) and name at the bottom of the card.</td></tr>
+    </tbody>
+  </table>
+
+  <p>The coloured left border on each card indicates the booking status:</p>
+  <ul style="margin: 12px 0 12px 20px; line-height: 2;">
+    <li><strong style="color:#b45309;">Amber border</strong> — Pending</li>
+    <li><strong style="color:#065f46;">Green border</strong> — Confirmed</li>
+    <li><strong style="color:#1e40af;">Blue border</strong> — Completed</li>
+    <li><strong style="color:#991b1b;">Red border</strong> — Cancelled</li>
+  </ul>
+
+  <h2>Schedule Toolbar</h2>
+  <table class="field-table">
+    <thead><tr><th>Button</th><th>What It Does</th></tr></thead>
+    <tbody>
+      <tr><td>Week / Day toggle</td><td>Switch between the 7-day week view and a single-day grid view showing all stylists as columns.</td></tr>
+      <tr><td>← (Previous)</td><td>Go back one week (or one day in Day view).</td></tr>
+      <tr><td>Date label</td><td>Shows the current date range being displayed, e.g. "May 11 – May 17, 2026".</td></tr>
+      <tr><td>→ (Next)</td><td>Go forward one week (or one day in Day view).</td></tr>
+      <tr><td>Today</td><td>Jump back to the current week (or today in Day view).</td></tr>
+      <tr><td>↻ Refresh</td><td>Reload the schedule from the server to pick up new bookings.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Day View</h2>
+  <p>Click the <strong>Day</strong> button to switch to the day view. This shows a time-slot grid with all stylists as columns, making it easy to see who is busy at each time slot. Click any filled cell to open the booking detail.</p>
+
+  <div class="box box--tip">
+    <strong>Clicking a Booking</strong>
+    Click any booking card in the week view (or any filled cell in the day view) to open the full booking detail modal where you can update the status, record payment, or reschedule.
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     5. BOOKING DETAIL
+══════════════════════════════════════════ -->
+<div class="section" id="booking-detail">
+  <div class="section-num">Section 5</div>
+  <h1>Booking Detail &amp; Actions</h1>
+  <p>Click any row in the booking list (or any card in the schedule) to open the full booking detail modal.</p>
+
+  <div class="screenshot">
+    <img src="screenshots/05-booking-detail.png" alt="Booking Detail Modal" />
+    <div class="screenshot__cap">Fig 5.1 — Booking #71 detail modal showing appointment timing, client info, payment section, and reschedule tool.</div>
+  </div>
+
+  <h2>Appointment Timing Card</h2>
+  <p>At the top of the modal is a dark card showing four key pieces of information at a glance:</p>
+  <table class="field-table">
+    <thead><tr><th>Field</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>Starts</td><td>The appointment start time.</td></tr>
+      <tr><td>Ends</td><td>Calculated end time based on service duration.</td></tr>
+      <tr><td>Duration</td><td>Total appointment length (e.g. 5hr 30min).</td></tr>
+      <tr><td>Price</td><td>Service price (e.g. From $210).</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Client Information</h2>
+  <p>Below the timing card is a full detail grid showing: Client name, Phone (clickable to call), Email (clickable to email), Service, Stylist, Date, Status, Notes, and when the booking was submitted.</p>
+
+  <h2>Payment Collection</h2>
+  <p>The Payment Collected section lets you record when a client pays in person:</p>
+  <ol class="steps">
+    <li>Enter the amount in the <strong>Amount ($)</strong> field (default is 30).</li>
+    <li>Click <strong>Mark as Paid</strong>.</li>
+    <li>The button turns green and shows "✓ Paid $[amount]".</li>
+    <li>Click again to reverse the payment if needed.</li>
+  </ol>
+  <div class="box box--info">
+    <strong>Note</strong>
+    Payment is recorded manually after the service is complete in person. This is for tracking deposit/full-payment collection only — it does not process any card payments.
+  </div>
+
+  <h2>Reschedule</h2>
+  <p>To move a booking to a new date or time:</p>
+  <ol class="steps">
+    <li>In the <strong>Reschedule</strong> section, click the <strong>Date</strong> field and select the new date.</li>
+    <li>Use the <strong>Start Time</strong> dropdown to pick the new start time.</li>
+    <li>Use the <strong>End Time</strong> dropdown — the Duration badge updates automatically.</li>
+    <li>Click <strong>Save Changes</strong>.</li>
+  </ol>
+
+  <h3>Reschedule Errors</h3>
+  <table class="error-table">
+    <thead><tr><th>Error</th><th>Fix</th></tr></thead>
+    <tbody>
+      <tr><td>"Please select a date."</td><td>The date field is empty. Click the date input and choose a date.</td></tr>
+      <tr><td>"End time must be after start time."</td><td>The end time is set to the same or earlier than the start time. Adjust the End Time dropdown.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Updating Status from the Modal</h2>
+  <ol class="steps">
+    <li>Use the <strong>status dropdown</strong> at the bottom of the modal to select the new status.</li>
+    <li>Click <strong>Save Status</strong>.</li>
+    <li>The modal closes and the booking list refreshes automatically.</li>
+  </ol>
+</div>
+
+<!-- ══════════════════════════════════════════
+     6. MANUAL BOOKING
+══════════════════════════════════════════ -->
+<div class="section" id="manual-booking">
+  <div class="section-num">Section 6</div>
+  <h1>Creating a Manual Booking</h1>
+  <p>Use the manual booking form to add appointments for walk-in clients or phone calls — any booking that doesn't come through the website form.</p>
+  <p>Click the <strong>+ New Booking</strong> button on the Dashboard to open the form.</p>
+
+  <div class="screenshot">
+    <img src="screenshots/06-manual-booking.png" alt="New Manual Booking Form" />
+    <div class="screenshot__cap">Fig 6.1 — The New Manual Booking form with all required and optional fields.</div>
+  </div>
+
+  <h2>Form Fields</h2>
+  <table class="field-table">
+    <thead><tr><th>Field</th><th>Required</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Client Name</td><td><span class="req">Required</span></td><td>Client's full name.</td></tr>
+      <tr><td>Phone</td><td><span class="req">Required</span></td><td>Client's phone number for contact.</td></tr>
+      <tr><td>Email</td><td>Optional</td><td>Client's email address. Leave blank if not provided.</td></tr>
+      <tr><td>Stylist</td><td>Optional</td><td>Choose a specific stylist or leave as "Any stylist".</td></tr>
+      <tr><td>Service</td><td><span class="req">Required</span></td><td>Select from the full service menu dropdown.</td></tr>
+      <tr><td>Date</td><td><span class="req">Required</span></td><td>Defaults to today. Click to pick a different date.</td></tr>
+      <tr><td>Time</td><td><span class="req">Required</span></td><td>Select the appointment start time from the dropdown.</td></tr>
+      <tr><td>Status</td><td>Optional</td><td>Defaults to Confirmed. Change to Pending if still tentative.</td></tr>
+      <tr><td>Deposit Amount ($)</td><td>Optional</td><td>Defaults to $30. Change to the actual deposit amount.</td></tr>
+      <tr><td>Payment Received</td><td>Optional</td><td>Check this box if payment has already been collected.</td></tr>
+      <tr><td>Notes</td><td>Optional</td><td>Any internal notes about the appointment.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>How to Create a Booking</h2>
+  <ol class="steps">
+    <li>Fill in all required fields (marked with *).</li>
+    <li>Select the service from the dropdown — this automatically sets the duration.</li>
+    <li>Set the date and time.</li>
+    <li>Optionally check <strong>Payment Received</strong> if deposit was collected on the spot.</li>
+    <li>Click <strong>Create Booking</strong>.</li>
+    <li>The modal closes and the booking appears immediately in the list and Today's Schedule (if it is today).</li>
+  </ol>
+
+  <div class="box box--tip">
+    <strong>Tip — Walk-ins</strong>
+    For walk-in clients, set the Status to <strong>Confirmed</strong> and check <strong>Payment Received</strong> if they paid a deposit immediately.
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     7. STYLISTS
+══════════════════════════════════════════ -->
+<div class="section" id="stylists">
+  <div class="section-num">Section 7</div>
+  <h1>Managing Stylists</h1>
+  <p>The Stylists section lets you add, edit, and control which stylists appear on the public website and in the booking form.</p>
+
+  <div class="screenshot">
+    <img src="screenshots/07-stylists.png" alt="Stylists Page" />
+    <div class="screenshot__cap">Fig 7.1 — Stylists page showing the Add/Edit form and the current stylist list.</div>
+  </div>
+
+  <h2>Adding a New Stylist</h2>
+  <ol class="steps">
+    <li>Fill in the <strong>Name</strong> field with the stylist's full name.</li>
+    <li>Fill in the <strong>Role / Title</strong> field (e.g. "Master Stylist · 5 Years").</li>
+    <li>Optionally write a short <strong>Bio</strong> for the About section on the website.</li>
+    <li>Click <strong>Choose File</strong> under Photo to upload a profile photo. Accepted formats: JPG, PNG, WEBP.</li>
+    <li>Set the <strong>Display Order</strong> — lower numbers appear first on the website. Default is 99.</li>
+    <li>Click <strong>Add Stylist</strong>.</li>
+  </ol>
+
+  <h2>Editing a Stylist</h2>
+  <ol class="steps">
+    <li>Find the stylist in the list below the form.</li>
+    <li>Click the <strong>Edit</strong> button on the right side of their card.</li>
+    <li>The form above will fill in with their current details.</li>
+    <li>Make your changes and click <strong>Save Changes</strong>.</li>
+    <li>Click <strong>Cancel Edit</strong> if you want to discard your changes.</li>
+  </ol>
+
+  <h2>Showing / Hiding a Stylist</h2>
+  <p>Each stylist card has a <strong>Hide</strong> or <strong>Show</strong> button:</p>
+  <table class="field-table">
+    <thead><tr><th>Button</th><th>Effect</th></tr></thead>
+    <tbody>
+      <tr><td>Hide (red)</td><td>Removes the stylist from the public website and the booking form dropdown. Their past bookings remain in the system.</td></tr>
+      <tr><td>Show (outline)</td><td>Makes a previously hidden stylist visible again on the website and booking form.</td></tr>
+    </tbody>
+  </table>
+  <p>Hidden stylists appear greyed out in the admin list so you can tell them apart at a glance.</p>
+
+  <div class="box box--info">
+    <strong>Photos in Bookings</strong>
+    Once a stylist has a photo uploaded, it will appear in the Today's Schedule card, week schedule cards, and the stylist filter bar on the Bookings page.
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     8. SERVICES
+══════════════════════════════════════════ -->
+<div class="section" id="services">
+  <div class="section-num">Section 8</div>
+  <h1>Managing Services</h1>
+  <p>The Services section controls the full menu that appears on the public website and in the booking form. Services are grouped by category.</p>
+
+  <div class="screenshot">
+    <img src="screenshots/08-services.png" alt="Services Page" />
+    <div class="screenshot__cap">Fig 8.1 — Services page showing the Add/Edit form and services grouped by category with prices and durations.</div>
+  </div>
+
+  <h2>Adding a New Service</h2>
+  <ol class="steps">
+    <li>Select the <strong>Category</strong> from the dropdown (e.g. Braids &amp; Protective Styles).</li>
+    <li>Enter the <strong>Service Name</strong> (e.g. Knotless Braids).</li>
+    <li>Enter the <strong>Duration</strong> as text (e.g. "4 hr 30 min" or "30 min").</li>
+    <li>Enter the <strong>Price</strong> as a number (e.g. 210). Check <strong>Starting price</strong> if this is a "from" price.</li>
+    <li>Set the <strong>Order</strong> number — lower numbers appear first within the category.</li>
+    <li>Click <strong>Add Service</strong>.</li>
+  </ol>
+
+  <h2>Editing a Service</h2>
+  <ol class="steps">
+    <li>Find the service in the list below. Click the ✏️ pencil icon on the right.</li>
+    <li>The form above fills in with the current details.</li>
+    <li>Make your edits and click <strong>Save Changes</strong>.</li>
+  </ol>
+
+  <h2>Service Actions</h2>
+  <table class="field-table">
+    <thead><tr><th>Icon</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td>✏️ Edit</td><td>Loads the service into the form above for editing.</td></tr>
+      <tr><td>👁 / 🚫 Toggle</td><td>Show or hide the service from the public website. Hidden services cannot be booked by clients online.</td></tr>
+      <tr><td>🗑 Delete</td><td>Permanently removes the service. A confirmation prompt appears first.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Service Categories</h2>
+  <p>The current categories available are:</p>
+  <ul style="margin: 12px 0 12px 20px; line-height: 2.2;">
+    <li>Braids &amp; Protective Styles</li>
+    <li>Cornrows &amp; Dutch Braids</li>
+    <li>Loc Services</li>
+    <li>Sew-in &amp; Crochet</li>
+    <li>Natural Hair &amp; Twists</li>
+    <li>Wash &amp; Style</li>
+    <li>Treatments &amp; Beauty</li>
+  </ul>
+
+  <div class="box box--warn">
+    <strong>Duration &amp; Booking System</strong>
+    The duration you enter for a service (e.g. "4 hr 30 min") is also used to calculate the end time shown in bookings. Enter it in a consistent format so the system can parse it correctly.
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     9. GALLERY
+══════════════════════════════════════════ -->
+<div class="section" id="gallery">
+  <div class="section-num">Section 9</div>
+  <h1>Gallery</h1>
+  <p>The Gallery section controls the photos displayed in the public gallery on the website. Upload work photos, before/after shots, or any images you want clients to see.</p>
+
+  <div class="screenshot">
+    <img src="screenshots/09-gallery.png" alt="Gallery Page" />
+    <div class="screenshot__cap">Fig 9.1 — Gallery page showing the upload zone and the current photo grid.</div>
+  </div>
+
+  <h2>Uploading Photos</h2>
+  <p>There are two ways to add photos:</p>
+  <h3>Method 1 — Drag &amp; Drop</h3>
+  <ol class="steps">
+    <li>Drag image files from your computer and drop them onto the dashed upload zone.</li>
+    <li>You can drop multiple files at once.</li>
+  </ol>
+  <h3>Method 2 — Choose Files</h3>
+  <ol class="steps">
+    <li>Click the <strong>Choose Files</strong> button inside the upload zone.</li>
+    <li>Select one or more image files from your computer.</li>
+  </ol>
+
+  <h3>After Selecting Files</h3>
+  <ol class="steps">
+    <li>Optionally fill in <strong>Alt text</strong> — a description for accessibility (e.g. "Box braids on a client").</li>
+    <li>Optionally fill in a <strong>Label</strong> — this text appears when a visitor hovers over the photo on the website.</li>
+    <li>Click the <strong>Upload</strong> button.</li>
+    <li>A success message confirms the upload. The photos appear in the grid below.</li>
+  </ol>
+
+  <h2>Deleting a Photo</h2>
+  <ol class="steps">
+    <li>Hover over any photo in the grid to reveal the overlay.</li>
+    <li>Click the <strong>Delete</strong> button that appears.</li>
+    <li>Confirm the deletion in the prompt.</li>
+  </ol>
+
+  <div class="box box--warn">
+    <strong>Accepted File Types</strong>
+    Upload JPG, PNG, WEBP, or GIF image files only. Very large files may take longer to upload depending on your internet connection.
+  </div>
+
+  <div class="box box--tip">
+    <strong>Best Practice</strong>
+    Resize photos to under 2MB before uploading for faster loading on the website. Use the label field to name the hairstyle so clients can identify what they're looking at.
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     10. SUBSCRIBERS
+══════════════════════════════════════════ -->
+<div class="section" id="subscribers">
+  <div class="section-num">Section 10</div>
+  <h1>Subscribers</h1>
+  <p>The Subscribers section shows all email addresses collected from people who signed up through the website's newsletter or contact form.</p>
+
+  <div class="screenshot">
+    <img src="screenshots/10-subscribers.png" alt="Subscribers Page" />
+    <div class="screenshot__cap">Fig 10.1 — Subscribers list showing email, name, source, and sign-up date for each subscriber.</div>
+  </div>
+
+  <h2>Subscriber Table Columns</h2>
+  <table class="field-table">
+    <thead><tr><th>Column</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>Email</td><td>The subscriber's email address. Click to open your email client pre-addressed to them.</td></tr>
+      <tr><td>Name</td><td>Their name, if provided when signing up.</td></tr>
+      <tr><td>Source</td><td>Where they signed up — usually "Website".</td></tr>
+      <tr><td>Signed Up</td><td>The date they subscribed.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Exporting Subscribers</h2>
+  <ol class="steps">
+    <li>Click the <strong>Export CSV</strong> button in the top right of the section.</li>
+    <li>A CSV file will download to your computer with all subscriber data.</li>
+    <li>Open the file in Excel or Google Sheets to use it for email marketing.</li>
+  </ol>
+
+  <div class="box box--tip">
+    <strong>Using Subscriber Data</strong>
+    Export your subscriber list and import it into an email marketing tool (such as Mailchimp or Gmail Groups) to send promotional emails, appointment reminders, or announcements to all your subscribers at once.
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     11. ANALYTICS
+══════════════════════════════════════════ -->
+<div class="section" id="analytics">
+  <div class="section-num">Section 11</div>
+  <h1>Analytics</h1>
+  <p>The Analytics section shows you how people are finding and using your website, giving you insight into your online presence.</p>
+
+  <div class="screenshot">
+    <img src="screenshots/11-analytics.png" alt="Analytics Page" />
+    <div class="screenshot__cap">Fig 11.1 — Analytics dashboard showing page views, daily chart, top pages, referrers, and recent logins.</div>
+  </div>
+
+  <h2>Summary Stats</h2>
+  <table class="field-table">
+    <thead><tr><th>Stat</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>Page Views Today</td><td>Total number of times any page on your site was loaded today.</td></tr>
+      <tr><td>Views This Week</td><td>Total page views for the current week.</td></tr>
+      <tr><td>Unique Visitors Today</td><td>Number of distinct individuals who visited the site today (based on browser fingerprint).</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Daily Page Views Chart</h2>
+  <p>A bar chart showing traffic for each of the last 14 days. The total across all 14 days is shown in the top right (e.g. "610 total views"). Use this to spot your busiest days and track growth over time.</p>
+
+  <h2>Top Pages</h2>
+  <p>Shows which pages on your website receive the most visits. The home page (<strong>/</strong>) is almost always number one. This helps you understand what content clients look at most.</p>
+
+  <h2>Top Referrers</h2>
+  <p>Shows where your visitors are coming from. Common referrers include:</p>
+  <ul style="margin: 12px 0 12px 20px; line-height: 2.2;">
+    <li><strong>www.google.com</strong> — visitors who found you via Google Search</li>
+    <li><strong>l.instagram.com</strong> — visitors who clicked a link in your Instagram posts or bio</li>
+    <li><strong>Direct</strong> — visitors who typed your URL directly or used a bookmark</li>
+  </ul>
+  <div class="box box--tip">
+    <strong>Insight</strong>
+    If Instagram is sending a lot of traffic, that tells you your social media is working. If Google is high, your SEO is good. Focus on the channels bringing in the most visitors.
+  </div>
+
+  <h2>Recent Logins</h2>
+  <p>A security log showing the last admin logins — who logged in, when, from which IP address, and on what type of device (Desktop or Mobile). Use this to check for any unauthorised access to your admin panel.</p>
+
+  <div class="box box--warn">
+    <strong>Unfamiliar Login?</strong>
+    If you see a login time or IP address you don't recognise, change your password immediately via the Settings page and contact your developer.
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     12. SETTINGS
+══════════════════════════════════════════ -->
+<div class="section" id="settings">
+  <div class="section-num">Section 12</div>
+  <h1>Settings</h1>
+  <p>The Settings page currently contains one function: changing your account password.</p>
+
+  <div class="screenshot">
+    <img src="screenshots/12-settings.png" alt="Settings Page" />
+    <div class="screenshot__cap">Fig 12.1 — Settings page with the Change Password form.</div>
+  </div>
+
+  <h2>Changing Your Password</h2>
+  <ol class="steps">
+    <li>Enter your <strong>Current Password</strong> to verify your identity.</li>
+    <li>Enter the <strong>New Password</strong> — must be at least 8 characters.</li>
+    <li>Re-enter the new password in <strong>Confirm New Password</strong> — must match exactly.</li>
+    <li>Click <strong>Update Password</strong>.</li>
+    <li>A green success message appears: "✓ Password updated successfully."</li>
+  </ol>
+
+  <div class="box box--info">
+    <strong>Which account does this update?</strong>
+    This changes the password for whichever account is currently logged in — including the superadmin account. If you are logged in as "admin", this updates the admin password.
+  </div>
+
+  <h3>Password Change Errors</h3>
+  <table class="error-table">
+    <thead><tr><th>Error</th><th>Fix</th></tr></thead>
+    <tbody>
+      <tr><td>"Passwords do not match."</td><td>The New Password and Confirm New Password fields are different. Re-type both carefully.</td></tr>
+      <tr><td>"Password must be at least 8 characters."</td><td>Your new password is too short. Choose a longer password.</td></tr>
+      <tr><td>"Current password is incorrect."</td><td>The current password you entered is wrong. Double-check and try again.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="box box--warn">
+    <strong>Important</strong>
+    After changing the password, you will stay logged in on your current device. The next time you need to log in, use the new password. There is no password recovery by email — if you forget it, the superadmin must reset it for you from the Users page.
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     13. USERS
+══════════════════════════════════════════ -->
+<div class="section" id="users">
+  <div class="section-num">Section 13</div>
+  <h1>Users &amp; Access</h1>
+  <p>The Users section is only visible to accounts with the <strong>Superadmin</strong> role. It lets you create and manage login accounts for staff members.</p>
+
+  <div class="screenshot">
+    <img src="screenshots/13-users.png" alt="Users Page" />
+    <div class="screenshot__cap">Fig 13.1 — Users page showing the Add New User form and the list of all accounts with their roles.</div>
+  </div>
+
+  <h2>User Roles</h2>
+  <table class="field-table">
+    <thead><tr><th>Role</th><th>What They Can Do</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="badge badge--super">SUPERADMIN</span></td>
+        <td>Full access to everything including the Users page. Can create, delete, and reset passwords for other users. Should only be assigned to the salon owner.</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge--staff">STAFF</span></td>
+        <td>Access to Bookings, Gallery, Stylists, Services, Subscribers, Analytics, and Settings. Cannot access the Users page or create new accounts.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Adding a New User</h2>
+  <ol class="steps">
+    <li>Enter a <strong>Username</strong> for the new account (e.g. the staff member's first name).</li>
+    <li>Enter a <strong>Password</strong> — must be at least 8 characters.</li>
+    <li>Select a <strong>Role</strong> — choose Staff for most team members.</li>
+    <li>Click <strong>Create User</strong>.</li>
+    <li>A success message appears and the new user appears in the list below.</li>
+    <li>Share the username and password with the staff member directly and in person.</li>
+  </ol>
+
+  <div class="box box--warn">
+    <strong>First Login Note</strong>
+    After creating a new account, the staff member should log in and immediately change their password from the Settings page. Passwords created here are temporary and should not be shared over text or email.
+  </div>
+
+  <h2>Resetting a Password</h2>
+  <ol class="steps">
+    <li>Find the user in the All Users list.</li>
+    <li>Click <strong>Reset Password</strong>.</li>
+    <li>A popup asks you to type a new password (min 8 characters).</li>
+    <li>Enter the new password and click OK.</li>
+    <li>Share the new password with the staff member.</li>
+  </ol>
+
+  <h2>Deleting a User</h2>
+  <ol class="steps">
+    <li>Find the user in the list and click <strong>Delete</strong>.</li>
+    <li>Confirm the deletion in the prompt.</li>
+  </ol>
+
+  <div class="box box--error">
+    <strong>Cannot Delete</strong>
+    The superadmin account ("admin") cannot be deleted. You also cannot delete the account you are currently logged in as.
+  </div>
+
+  <h3>User Management Errors</h3>
+  <table class="error-table">
+    <thead><tr><th>Error</th><th>Fix</th></tr></thead>
+    <tbody>
+      <tr><td>"Username already taken"</td><td>A user with that username already exists. Choose a different username.</td></tr>
+      <tr><td>"Password must be at least 8 characters"</td><td>Enter a longer password — at least 8 characters.</td></tr>
+      <tr><td>"Username and password required"</td><td>Both fields must be filled in before clicking Create User.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════
+     14. COMMON ERRORS & FIXES
+══════════════════════════════════════════ -->
+<div class="section" id="errors">
+  <div class="section-num">Section 14</div>
+  <h1>Common Errors &amp; Quick Fixes</h1>
+  <p>A reference guide for the most common issues you may encounter while using the admin dashboard.</p>
+
+  <h2>Login Issues</h2>
+  <table class="error-table">
+    <thead><tr><th>Problem</th><th>Solution</th></tr></thead>
+    <tbody>
+      <tr><td>Can't log in — "Invalid username or password"</td><td>Check for typos. Passwords are case-sensitive. If you've forgotten the password, ask the superadmin to reset it from the Users page.</td></tr>
+      <tr><td>Logged out unexpectedly</td><td>Sessions last 24 hours. After 24 hours you will be logged out automatically. Simply log in again.</td></tr>
+      <tr><td>Dashboard loads but shows no data</td><td>Click the ↻ Refresh button or navigate away and back to the page. If it persists, log out and log back in.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Booking Issues</h2>
+  <table class="error-table">
+    <thead><tr><th>Problem</th><th>Solution</th></tr></thead>
+    <tbody>
+      <tr><td>Booking list is empty</td><td>Check if a filter is active. Click <strong>All Dates</strong> and set the status to "All statuses" to clear all filters.</td></tr>
+      <tr><td>Schedule view shows nothing</td><td>Click the <strong>Today</strong> button to navigate to the current week. Click <strong>↻ Refresh</strong> to reload.</td></tr>
+      <tr><td>Can't delete a booking — confirmation appears but row remains</td><td>Refresh the page. The deletion likely succeeded — the display sometimes needs a reload to update.</td></tr>
+      <tr><td>Payment toggle does nothing</td><td>Refresh the page and try again. If the issue persists, open the booking detail modal and use the payment section there instead.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Stylist &amp; Service Issues</h2>
+  <table class="error-table">
+    <thead><tr><th>Problem</th><th>Solution</th></tr></thead>
+    <tbody>
+      <tr><td>Stylist not showing in booking form</td><td>Go to the Stylists page and check if the stylist is hidden (greyed out with a "Show" button). Click Show to make them available again.</td></tr>
+      <tr><td>Service not showing on the website</td><td>Go to the Services page and look for the 🚫 icon next to the service. Click it to make the service visible again.</td></tr>
+      <tr><td>Photo not appearing after upload</td><td>Ensure the file is a JPG, PNG, or WEBP. Try a smaller file size. Hard refresh the browser (Ctrl+Shift+R) to clear the cache.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Gallery Issues</h2>
+  <table class="error-table">
+    <thead><tr><th>Problem</th><th>Solution</th></tr></thead>
+    <tbody>
+      <tr><td>"Upload failed"</td><td>The file may be too large or an unsupported format. Resize the image and try again. Supported: JPG, PNG, WEBP, GIF.</td></tr>
+      <tr><td>Upload button stays greyed out</td><td>You must select files first (drag &amp; drop or click Choose Files). The button activates only after files are selected.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>General Tips</h2>
+  <div class="box box--tip">
+    <strong>Hard Refresh</strong>
+    If something looks wrong or outdated, do a hard refresh: <strong>Ctrl + Shift + R</strong> (Windows) or <strong>Cmd + Shift + R</strong> (Mac). This clears the browser cache and loads the latest version of the admin panel.
+  </div>
+  <div class="box box--tip">
+    <strong>Mobile Access</strong>
+    The admin panel is accessible on mobile devices. Use your phone's browser and go to chaltusalon.com/admin. The sidebar collapses — tap the menu icon (☰) in the top left to open it.
+  </div>
+  <div class="box box--info">
+    <strong>Need Help?</strong>
+    For technical issues that cannot be resolved using this guide, contact your web developer with a description of the problem and a screenshot of any error message.
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     FOOTER
+══════════════════════════════════════════ -->
+<div style="background:var(--black);color:#6b7280;padding:40px 60px;font-size:.85rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
+  <div>
+    <strong style="color:#fff;display:block;margin-bottom:4px;">Chaltu's Salon — Admin Dashboard Manual</strong>
+    chaltusalon.com &nbsp;·&nbsp; Version 1.0 &nbsp;·&nbsp; May 2026
+  </div>
+  <div style="text-align:right;">
+    For technical support, contact your web developer.<br>
+    <span style="color:var(--gold)">chaltussalon@gmail.com</span>
+  </div>
+</div>
+
+</body>
+</html>
